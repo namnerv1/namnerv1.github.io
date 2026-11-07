@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<title>My LED Sign</title>
+<style>
+:root{
+  --bg:#eef1f7;--panel:#ffffff;--field:#f6f8fc;--text:#10162a;--muted:#5a6782;--line:#c9d1e0;--pill:#e6ebf4;--accent:#1f8fd0;--accentText:#ffffff;--frame:#c4ccdb;
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0b1020;--panel:#151e31;--field:#0b1425;--text:#eef3ff;--muted:#aab7d0;--line:#485674;--pill:#202d46;--accent:#40b9ef;--accentText:#071324;--frame:#26334c;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0b1020;--panel:#151e31;--field:#0b1425;--text:#eef3ff;--muted:#aab7d0;--line:#485674;--pill:#202d46;--accent:#40b9ef;--accentText:#071324;--frame:#26334c;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Noto Sans Thai","Noto Sans",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.wrap{max-width:680px;margin:auto;padding:0 16px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:18px;padding-bottom:10px}
+h1{font-size:23px;margin:0}
+.tag{color:var(--muted);font-size:13px}
+.langsel{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:7px 8px;max-width:46%}
+.preview{position:relative;background:#000;border:2px solid var(--frame);border-radius:16px;overflow:hidden;aspect-ratio:16/8;touch-action:manipulation}
+.preview canvas{width:100%;height:100%;display:block;background:#000}
+.preview .tap{position:absolute;right:9px;bottom:9px;background:#20283cc9;border:1px solid #536079;color:#fff;border-radius:10px;padding:7px 10px;font-size:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0 0}
+.field{display:block;font-size:14px;font-weight:600;margin:14px 0 7px}
+.field .val{font-weight:400;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);margin-top:6px}
+textarea{width:100%;min-height:80px;resize:vertical;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.range{width:100%;accent-color:var(--accent)}
+.range:disabled{opacity:.4}
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}
+.chips button{flex:none;border:1px solid var(--line);background:var(--pill);color:var(--text);border-radius:999px;padding:6px 11px;font-size:14px}
+.seg{display:flex;flex-wrap:wrap;background:var(--pill);border-radius:12px;padding:3px;gap:2px}
+.seg button{flex:1 1 0;min-width:0;border:0;background:transparent;color:var(--muted);padding:9px 4px;border-radius:9px;font-size:14px}
+#mode button{flex:1 1 30%}
+.chips.emo button{font-size:24px;padding:4px 10px;line-height:1.3}
+.seg.off{opacity:.45}
+.seg button.on{background:var(--field);color:var(--text);font-weight:700;box-shadow:0 0 0 1px var(--line)}
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.swatch{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);padding:0}
+.swatch.active{outline:3px solid var(--text);outline-offset:2px}
+.check{display:flex;gap:9px;align-items:center;margin-top:13px;font-size:14px}
+.check input{width:19px;height:19px;accent-color:var(--accent)}
+.buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.pill{border:1px solid var(--line);background:var(--pill);color:var(--text);border-radius:10px;padding:11px 14px}
+.primary{background:var(--accent);color:var(--accentText);border:none;font-weight:800}
+.saved{display:flex;gap:8px;flex-wrap:wrap}
+.saved .item{display:flex}
+.saved .item .pill{border-radius:10px 0 0 10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.saved .item .del{border-radius:0 10px 10px 0;border-left:0}
+.empty{color:var(--muted);font-size:14px}
+.foot{font-size:12px;color:var(--muted);margin:15px 2px 30px;line-height:1.6}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#display{display:none;position:fixed;inset:0;z-index:50;background:#000}
+#display canvas{width:100%;height:100%;display:block}
+#exit{position:absolute;right:10px;top:calc(10px + env(safe-area-inset-top,0px));background:#263145dd;color:#fff;border:1px solid #57677c;border-radius:10px;padding:10px 12px;opacity:0;transition:opacity .2s;pointer-events:none}
+#exit.show{opacity:1;pointer-events:auto}
+#toast{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#263145dd;color:#fff;border-radius:999px;padding:8px 16px;font-size:14px;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1}
+body.show #display{display:block}
+body.show{overflow:hidden}
+@media (min-width:600px){.preview{aspect-ratio:16/6}}
+@media (prefers-reduced-motion:reduce){#exit,#toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div><h1>✨ My LED Sign</h1><div class="tag" data-i="tag"></div></div>
+  <select class="langsel" id="lang" aria-label="Language"></select>
+</header>
+
+<main class="wrap">
+  <div class="preview"><canvas id="preview"></canvas><button class="tap" id="previewFull" data-i="full"></button></div>
+
+  <div class="panel">
+    <label class="field" for="message" data-i="msg"></label>
+    <textarea id="message" maxlength="300"></textarea>
+
+    <label class="field" data-i="tests"></label>
+    <div class="chips" id="tests"></div>
+
+    <label class="field" data-i="emo"></label>
+    <div class="chips emo" id="emojis"></div>
+
+    <label class="field" data-i="mode"></label>
+    <div class="seg" id="mode">
+      <button data-v="left" data-i="mLeft"></button><button data-v="right" data-i="mRight"></button><button data-v="still" data-i="mStill"></button>
+      <button data-v="up" data-i="mUp"></button><button data-v="down" data-i="mDown"></button>
+    </div>
+    <div class="note" id="modeNote"></div>
+    <label class="check"><input type="checkbox" id="paging"> <span data-i="paging"></span></label>
+
+    <label class="field" data-i="fx"></label>
+    <div class="seg" id="fx"><button data-v="none" data-i="fxNone"></button><button data-v="pulse" data-i="fxPulse"></button><button data-v="bounce" data-i="fxBounce"></button><button data-v="twinkle" data-i="fxTwinkle"></button></div>
+
+    <label class="field" data-i="look"></label>
+    <div class="seg" id="style"><button data-v="dots" data-i="dots"></button><button data-v="smooth" data-i="smooth"></button></div>
+
+    <label class="field" data-i="dot"></label>
+    <div class="seg" id="dot"><button data-v="fine" data-i="fine"></button><button data-v="medium" data-i="med"></button><button data-v="large" data-i="large"></button></div>
+
+    <label class="field" data-i="color"></label>
+    <div class="swatches" id="swatches"></div>
+
+    <div class="grid">
+      <div><label class="field" for="speed"><span data-i="speed"></span> <span class="val" id="speedVal"></span></label>
+        <input class="range" id="speed" type="range" min="1" max="100"></div>
+      <div><label class="field" for="size"><span data-i="size"></span> <span class="val" id="sizeVal"></span></label>
+        <input class="range" id="size" type="range" min="30" max="95"></div>
+    </div>
+
+    <label class="check"><input type="checkbox" id="mirror"> <span data-i="mirror"></span></label>
+
+    <div class="buttons">
+      <button class="pill primary" id="launch" data-i="show"></button>
+      <button class="pill" id="save" data-i="save"></button>
+      <button class="pill" id="reset" data-i="reset"></button>
+    </div>
+
+    <label class="field" data-i="saved"></label>
+    <div class="saved" id="saved"></div>
+  </div>
+  <p class="foot"><span data-i="foot"></span> · V0.3.3</p>
+</main>
+
+<div id="display"><canvas id="screen"></canvas><button id="exit" data-i="exit"></button><div id="toast"></div></div>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+
+/* ---------- 10 ภาษา ---------- */
+const LANGS=[['en','English'],['th','ไทย'],['es','Español'],['pt','Português'],['fr','Français'],['id','Bahasa Indonesia'],['vi','Tiếng Việt'],['ja','日本語'],['ko','한국어'],['zh','简体中文']];
+const T={
+en:{tag:'Personal LED sign · Works offline · No ads',msg:'Message',ph:'Type your message',tests:'Test texts',look:'Style',dots:'LED dots',smooth:'Smooth text',dot:'LED dot size',fine:'Fine',med:'Medium',large:'Large',dir:'Direction',rtl:'← Right to left',ltr:'→ Left to right',color:'Color',speed:'Speed',size:'Text size',auto:'Auto',still:'Stop scrolling (fit to screen)',mirror:'Mirror (for reflections)',show:'▶ Show full screen',save:'＋ Save message',reset:'↺ Reset',saved:'Saved messages',none:'No saved messages yet',empty:'Type a message first',exit:'✕ Exit',hint:'Tap left or right to switch saved messages',foot:'Everything runs on your device. Nothing you type is sent anywhere.',full:'⛶ Full screen',colors:['Yellow','Red','Green','Blue','White','Rainbow']},
+th:{tag:'ป้ายไฟส่วนตัว · ใช้ออฟไลน์ได้ · ไม่มีโฆษณา',msg:'ข้อความบนป้าย',ph:'พิมพ์ข้อความที่นี่',tests:'ข้อความทดสอบ',look:'รูปแบบตัวอักษร',dots:'LED จุด ๆ',smooth:'ตัวอักษรเรียบ',dot:'ขนาดเม็ดไฟ',fine:'ละเอียด',med:'กลาง',large:'ใหญ่',dir:'ทิศทาง',rtl:'← ขวาไปซ้าย',ltr:'→ ซ้ายไปขวา',color:'สีตัวอักษร',speed:'ความเร็ว',size:'ขนาดตัวอักษร',auto:'อัตโนมัติ',still:'หยุดวิ่ง (ขยายพอดีจอ)',mirror:'กลับด้านกระจก (สำหรับสะท้อนกระจก)',show:'▶ แสดงป้ายเต็มจอ',save:'＋ บันทึกข้อความ',reset:'↺ คืนค่าเริ่มต้น',saved:'ข้อความที่บันทึกไว้',none:'ยังไม่มีข้อความที่บันทึก',empty:'กรุณาพิมพ์ข้อความก่อน',exit:'✕ ออก',hint:'แตะซ้ายหรือขวาเพื่อเปลี่ยนข้อความที่บันทึกไว้',foot:'ทุกอย่างทำงานในเครื่อง ไม่ส่งข้อความออกไปที่ไหน',full:'⛶ เต็มจอ',colors:['เหลือง','แดง','เขียว','ฟ้า','ขาว','รุ้ง']},
+es:{tag:'Tu letrero LED · Sin conexión · Sin anuncios',msg:'Mensaje',ph:'Escribe tu mensaje',tests:'Textos de prueba',look:'Estilo',dots:'Puntos LED',smooth:'Texto liso',dot:'Tamaño del punto LED',fine:'Fino',med:'Medio',large:'Grande',dir:'Dirección',rtl:'← De derecha a izquierda',ltr:'→ De izquierda a derecha',color:'Color',speed:'Velocidad',size:'Tamaño del texto',auto:'Auto',still:'Detener (ajustar a la pantalla)',mirror:'Espejo (para reflejos)',show:'▶ Mostrar en pantalla completa',save:'＋ Guardar mensaje',reset:'↺ Restablecer',saved:'Mensajes guardados',none:'Aún no hay mensajes guardados',empty:'Escribe un mensaje primero',exit:'✕ Salir',hint:'Toca a la izquierda o a la derecha para cambiar de mensaje',foot:'Todo funciona en tu dispositivo. Lo que escribes no se envía a ningún sitio.',full:'⛶ Pantalla completa',colors:['Amarillo','Rojo','Verde','Azul','Blanco','Arcoíris']},
+pt:{tag:'Seu letreiro LED · Funciona offline · Sem anúncios',msg:'Mensagem',ph:'Digite sua mensagem',tests:'Textos de teste',look:'Estilo',dots:'Pontos LED',smooth:'Texto liso',dot:'Tamanho do ponto LED',fine:'Fino',med:'Médio',large:'Grande',dir:'Direção',rtl:'← Da direita para a esquerda',ltr:'→ Da esquerda para a direita',color:'Cor',speed:'Velocidade',size:'Tamanho do texto',auto:'Auto',still:'Parar (ajustar à tela)',mirror:'Espelhar (para reflexos)',show:'▶ Mostrar em tela cheia',save:'＋ Salvar mensagem',reset:'↺ Redefinir',saved:'Mensagens salvas',none:'Nenhuma mensagem salva ainda',empty:'Digite uma mensagem primeiro',exit:'✕ Sair',hint:'Toque à esquerda ou à direita para trocar de mensagem',foot:'Tudo funciona no seu aparelho. Nada do que você digita é enviado.',full:'⛶ Tela cheia',colors:['Amarelo','Vermelho','Verde','Azul','Branco','Arco-íris']},
+fr:{tag:'Votre panneau LED · Hors ligne · Sans publicité',msg:'Message',ph:'Tapez votre message',tests:'Textes de test',look:'Style',dots:'Points LED',smooth:'Texte lisse',dot:'Taille des points LED',fine:'Fin',med:'Moyen',large:'Grand',dir:'Sens',rtl:'← De droite à gauche',ltr:'→ De gauche à droite',color:'Couleur',speed:'Vitesse',size:'Taille du texte',auto:'Auto',still:'Arrêter le défilement (ajuster à l’écran)',mirror:'Miroir (pour les reflets)',show:'▶ Afficher en plein écran',save:'＋ Enregistrer le message',reset:'↺ Réinitialiser',saved:'Messages enregistrés',none:'Aucun message enregistré',empty:'Tapez d’abord un message',exit:'✕ Quitter',hint:'Touchez à gauche ou à droite pour changer de message',foot:'Tout fonctionne sur votre appareil. Rien n’est envoyé ailleurs.',full:'⛶ Plein écran',colors:['Jaune','Rouge','Vert','Bleu','Blanc','Arc-en-ciel']},
+id:{tag:'Papan LED pribadi · Bisa offline · Tanpa iklan',msg:'Pesan',ph:'Ketik pesanmu',tests:'Teks uji',look:'Gaya',dots:'Titik LED',smooth:'Teks halus',dot:'Ukuran titik LED',fine:'Halus',med:'Sedang',large:'Besar',dir:'Arah',rtl:'← Kanan ke kiri',ltr:'→ Kiri ke kanan',color:'Warna',speed:'Kecepatan',size:'Ukuran teks',auto:'Otomatis',still:'Berhenti bergulir (pas layar)',mirror:'Cermin (untuk pantulan)',show:'▶ Tampilkan layar penuh',save:'＋ Simpan pesan',reset:'↺ Atur ulang',saved:'Pesan tersimpan',none:'Belum ada pesan tersimpan',empty:'Ketik pesan dulu',exit:'✕ Keluar',hint:'Ketuk kiri atau kanan untuk ganti pesan',foot:'Semua berjalan di perangkatmu. Tidak ada yang dikirim ke mana pun.',full:'⛶ Layar penuh',colors:['Kuning','Merah','Hijau','Biru','Putih','Pelangi']},
+vi:{tag:'Bảng LED cá nhân · Dùng ngoại tuyến · Không quảng cáo',msg:'Nội dung',ph:'Nhập nội dung',tests:'Văn bản thử',look:'Kiểu chữ',dots:'Chấm LED',smooth:'Chữ mịn',dot:'Cỡ chấm LED',fine:'Nhỏ',med:'Vừa',large:'Lớn',dir:'Hướng chạy',rtl:'← Phải sang trái',ltr:'→ Trái sang phải',color:'Màu',speed:'Tốc độ',size:'Cỡ chữ',auto:'Tự động',still:'Dừng chạy (vừa màn hình)',mirror:'Lật gương (để phản chiếu)',show:'▶ Hiển thị toàn màn hình',save:'＋ Lưu nội dung',reset:'↺ Đặt lại',saved:'Nội dung đã lưu',none:'Chưa có nội dung nào được lưu',empty:'Hãy nhập nội dung trước',exit:'✕ Thoát',hint:'Chạm bên trái hoặc phải để đổi nội dung',foot:'Mọi thứ chạy trên máy của bạn. Không gửi đi đâu cả.',full:'⛶ Toàn màn hình',colors:['Vàng','Đỏ','Xanh lá','Xanh dương','Trắng','Cầu vồng']},
+ja:{tag:'自分だけのLED看板・オフライン対応・広告なし',msg:'メッセージ',ph:'メッセージを入力',tests:'テスト用テキスト',look:'表示スタイル',dots:'LEDドット',smooth:'なめらか文字',dot:'LEDドットの大きさ',fine:'細かい',med:'普通',large:'大きい',dir:'流れる方向',rtl:'← 右から左',ltr:'→ 左から右',color:'色',speed:'速さ',size:'文字の大きさ',auto:'自動',still:'流さない（画面に合わせる）',mirror:'左右反転（反射用）',show:'▶ 全画面で表示',save:'＋ メッセージを保存',reset:'↺ 初期設定に戻す',saved:'保存したメッセージ',none:'保存したメッセージはまだありません',empty:'先にメッセージを入力してください',exit:'✕ 終了',hint:'左右をタップして保存したメッセージを切り替え',foot:'すべて端末内で動作します。入力内容はどこにも送信されません。',full:'⛶ 全画面',colors:['黄','赤','緑','青','白','虹']},
+ko:{tag:'나만의 LED 전광판 · 오프라인 사용 · 광고 없음',msg:'문구',ph:'문구를 입력하세요',tests:'테스트 문구',look:'스타일',dots:'LED 도트',smooth:'부드러운 글자',dot:'LED 도트 크기',fine:'촘촘하게',med:'보통',large:'크게',dir:'방향',rtl:'← 오른쪽에서 왼쪽',ltr:'→ 왼쪽에서 오른쪽',color:'색상',speed:'속도',size:'글자 크기',auto:'자동',still:'멈추기 (화면에 맞춤)',mirror:'좌우 반전 (반사용)',show:'▶ 전체 화면으로 보기',save:'＋ 문구 저장',reset:'↺ 초기화',saved:'저장한 문구',none:'저장한 문구가 없습니다',empty:'먼저 문구를 입력하세요',exit:'✕ 나가기',hint:'왼쪽이나 오른쪽을 탭해 저장한 문구로 바꾸기',foot:'모든 기능이 기기 안에서 작동하며, 입력한 내용은 어디에도 전송되지 않습니다.',full:'⛶ 전체 화면',colors:['노랑','빨강','초록','파랑','흰색','무지개']},
+zh:{tag:'个人LED灯牌 · 离线可用 · 无广告',msg:'文字内容',ph:'输入要显示的文字',tests:'测试文字',look:'样式',dots:'LED点阵',smooth:'平滑文字',dot:'LED点大小',fine:'精细',med:'中等',large:'大',dir:'方向',rtl:'← 从右到左',ltr:'→ 从左到右',color:'颜色',speed:'速度',size:'文字大小',auto:'自动',still:'停止滚动（适应屏幕）',mirror:'镜像（用于反射）',show:'▶ 全屏显示',save:'＋ 保存文字',reset:'↺ 恢复默认',saved:'已保存的文字',none:'还没有保存的文字',empty:'请先输入文字',exit:'✕ 退出',hint:'点击左侧或右侧切换已保存的文字',foot:'所有功能都在本机运行，输入的内容不会发送到任何地方。',full:'⛶ 全屏',colors:['黄','红','绿','蓝','白','彩虹']}
+};
+
+const T2={
+en:{mode:'Motion',mLeft:'← Left',mRight:'Right →',mUp:'↑ Up',mDown:'↓ Down',mStill:'■ Still',pages:'Long text in Still mode is split into pages automatically.'},
+th:{mode:'การเคลื่อนที่',mLeft:'← ซ้าย',mRight:'ขวา →',mUp:'↑ ขึ้น',mDown:'↓ ลง',mStill:'■ หยุดนิ่ง',pages:'ข้อความยาวในโหมดหยุดนิ่งจะแบ่งหน้าให้อัตโนมัติ'},
+es:{mode:'Movimiento',mLeft:'← Izquierda',mRight:'Derecha →',mUp:'↑ Arriba',mDown:'↓ Abajo',mStill:'■ Fijo',pages:'En modo Fijo, el texto largo se divide en páginas automáticamente.'},
+pt:{mode:'Movimento',mLeft:'← Esquerda',mRight:'Direita →',mUp:'↑ Para cima',mDown:'↓ Para baixo',mStill:'■ Parado',pages:'No modo Parado, textos longos são divididos em páginas automaticamente.'},
+fr:{mode:'Mouvement',mLeft:'← Gauche',mRight:'Droite →',mUp:'↑ Haut',mDown:'↓ Bas',mStill:'■ Fixe',pages:'En mode Fixe, un texte long est découpé en pages automatiquement.'},
+id:{mode:'Gerakan',mLeft:'← Kiri',mRight:'Kanan →',mUp:'↑ Atas',mDown:'↓ Bawah',mStill:'■ Diam',pages:'Di mode Diam, teks panjang otomatis dibagi menjadi beberapa halaman.'},
+vi:{mode:'Chuyển động',mLeft:'← Trái',mRight:'Phải →',mUp:'↑ Lên',mDown:'↓ Xuống',mStill:'■ Đứng yên',pages:'Ở chế độ Đứng yên, văn bản dài sẽ tự chia thành nhiều trang.'},
+ja:{mode:'動き',mLeft:'← 左へ',mRight:'右へ →',mUp:'↑ 上へ',mDown:'↓ 下へ',mStill:'■ 固定',pages:'固定モードでは、長い文章を自動でページに分けます。'},
+ko:{mode:'움직임',mLeft:'← 왼쪽',mRight:'오른쪽 →',mUp:'↑ 위로',mDown:'↓ 아래로',mStill:'■ 고정',pages:'고정 모드에서는 긴 문구를 자동으로 여러 페이지로 나눕니다.'},
+zh:{mode:'移动方式',mLeft:'← 向左',mRight:'向右 →',mUp:'↑ 向上',mDown:'↓ 向下',mStill:'■ 静止',pages:'静止模式下，长文字会自动分页显示。'}
+};
+Object.keys(T2).forEach(k=>Object.assign(T[k],T2[k]));
+const T3={"en": {"noteH": "Left/Right joins all lines into one. For multiple lines, use Up/Down or Still.", "noteV": "Up/Down wraps text to the screen width and keeps your line breaks."}, "th": {"noteH": "ซ้าย/ขวา จะรวมทุกบรรทัดเป็นบรรทัดเดียว ถ้าอยากเห็นหลายบรรทัด ให้ใช้ขึ้น/ลง หรือหยุดนิ่ง", "noteV": "ขึ้น/ลง จะตัดบรรทัดตามความกว้างจอ และเก็บการขึ้นบรรทัดที่พิมพ์ไว้"}, "es": {"noteH": "Izquierda/Derecha une todas las líneas en una. Para varias líneas, usa Arriba/Abajo o Fijo.", "noteV": "Arriba/Abajo ajusta el texto al ancho de la pantalla y respeta tus saltos de línea."}, "pt": {"noteH": "Esquerda/Direita junta todas as linhas em uma. Para várias linhas, use Para cima/Para baixo ou Parado.", "noteV": "Para cima/Para baixo quebra o texto na largura da tela e mantém suas quebras de linha."}, "fr": {"noteH": "Gauche/Droite réunit toutes les lignes en une seule. Pour plusieurs lignes, utilisez Haut/Bas ou Fixe.", "noteV": "Haut/Bas adapte le texte à la largeur de l’écran et garde vos retours à la ligne."}, "id": {"noteH": "Kiri/Kanan menggabungkan semua baris jadi satu. Untuk beberapa baris, pakai Atas/Bawah atau Diam.", "noteV": "Atas/Bawah memotong teks sesuai lebar layar dan mempertahankan baris yang kamu buat."}, "vi": {"noteH": "Trái/Phải sẽ gộp mọi dòng thành một dòng. Muốn nhiều dòng, hãy dùng Lên/Xuống hoặc Đứng yên.", "noteV": "Lên/Xuống tự xuống dòng theo chiều rộng màn hình và giữ các dòng bạn đã ngắt."}, "ja": {"noteH": "左へ・右へでは全行を1行にまとめます。複数行で見せたいときは上へ・下へか固定を使ってください。", "noteV": "上へ・下へでは画面の幅に合わせて改行し、入力した改行もそのまま使います。"}, "ko": {"noteH": "왼쪽/오른쪽은 모든 줄을 한 줄로 합칩니다. 여러 줄로 보이려면 위로/아래로 또는 고정을 쓰세요.", "noteV": "위로/아래로는 화면 너비에 맞춰 줄을 바꾸고, 입력한 줄바꿈도 유지합니다."}, "zh": {"noteH": "向左/向右会把所有行合并成一行。想显示多行，请用向上/向下或静止。", "noteV": "向上/向下会按屏幕宽度自动换行，并保留你输入的换行。"}};
+Object.keys(T3).forEach(k=>Object.assign(T[k],T3[k]));
+const T4={"en": {"emo": "Quick emoji", "fx": "Animation (Still mode)", "fxNone": "Off", "fxPulse": "Beat", "fxBounce": "Bounce", "fxTwinkle": "Twinkle"}, "th": {"emo": "อีโมจิด่วน", "fx": "เอฟเฟกต์เคลื่อนไหว (โหมดหยุดนิ่ง)", "fxNone": "ปิด", "fxPulse": "เต้น", "fxBounce": "เด้ง", "fxTwinkle": "ระยิบ"}, "es": {"emo": "Emojis rápidos", "fx": "Animación (modo Fijo)", "fxNone": "Apagada", "fxPulse": "Latido", "fxBounce": "Rebote", "fxTwinkle": "Destello"}, "pt": {"emo": "Emojis rápidos", "fx": "Animação (modo Parado)", "fxNone": "Desligada", "fxPulse": "Batida", "fxBounce": "Pulo", "fxTwinkle": "Brilho"}, "fr": {"emo": "Émojis rapides", "fx": "Animation (mode Fixe)", "fxNone": "Désactivée", "fxPulse": "Battement", "fxBounce": "Rebond", "fxTwinkle": "Scintillement"}, "id": {"emo": "Emoji cepat", "fx": "Animasi (mode Diam)", "fxNone": "Mati", "fxPulse": "Berdetak", "fxBounce": "Memantul", "fxTwinkle": "Berkilau"}, "vi": {"emo": "Emoji nhanh", "fx": "Hiệu ứng (chế độ Đứng yên)", "fxNone": "Tắt", "fxPulse": "Nhịp đập", "fxBounce": "Nảy", "fxTwinkle": "Lấp lánh"}, "ja": {"emo": "クイック絵文字", "fx": "アニメーション（固定モード）", "fxNone": "オフ", "fxPulse": "鼓動", "fxBounce": "バウンド", "fxTwinkle": "きらめき"}, "ko": {"emo": "빠른 이모지", "fx": "애니메이션 (고정 모드)", "fxNone": "끄기", "fxPulse": "두근두근", "fxBounce": "통통", "fxTwinkle": "반짝반짝"}, "zh": {"emo": "快捷表情", "fx": "动画（静止模式）", "fxNone": "关闭", "fxPulse": "跳动", "fxBounce": "弹跳", "fxTwinkle": "闪烁"}};
+Object.keys(T4).forEach(k=>Object.assign(T[k],T4[k]));
+const T5={"en": {"paging": "Split into pages when text gets too small (Still mode)", "pages": "Still: all your text stays on one screen."}, "th": {"paging": "แบ่งหน้าอัตโนมัติ เมื่อข้อความยาวจนตัวอักษรเล็กเกินไป (โหมดหยุดนิ่ง)", "pages": "หยุดนิ่ง: ข้อความทั้งหมดจะอยู่ในจอเดียว"}, "es": {"paging": "Dividir en páginas si el texto queda demasiado pequeño (modo Fijo)", "pages": "Fijo: todo el texto se queda en una sola pantalla."}, "pt": {"paging": "Dividir em páginas quando o texto ficar pequeno demais (modo Parado)", "pages": "Parado: todo o texto fica em uma única tela."}, "fr": {"paging": "Découper en pages si le texte devient trop petit (mode Fixe)", "pages": "Fixe : tout le texte reste sur un seul écran."}, "id": {"paging": "Bagi jadi beberapa halaman jika teks terlalu kecil (mode Diam)", "pages": "Diam: semua teks tetap dalam satu layar."}, "vi": {"paging": "Chia trang khi chữ quá nhỏ (chế độ Đứng yên)", "pages": "Đứng yên: toàn bộ chữ nằm trong một màn hình."}, "ja": {"paging": "文字が小さくなりすぎるときはページに分ける（固定モード）", "pages": "固定：文章はすべて1画面に表示します。"}, "ko": {"paging": "글자가 너무 작아지면 페이지로 나누기 (고정 모드)", "pages": "고정: 모든 문구를 한 화면에 표시합니다."}, "zh": {"paging": "文字太小时自动分页（静止模式）", "pages": "静止：所有文字都显示在同一屏幕上。"}};
+Object.keys(T5).forEach(k=>Object.assign(T[k],T5[k]));
+const TESTS=['ผู้ใหญ่ที่น่ารัก','กู้ภัยฉุกเฉิน','น้ำแข็งใส','ซื้อหนึ่งแถมหนึ่ง','รักนะ ❤️ LOVE YOU 😍','สู้ ๆ 💪🔥🎉','วิธีทดลองให้ได้เต็มจอจริง: อย่าเปิดในแอป Claude ให้กด ⋮ มุมขวาบน แล้วเลือกเปิดในเบราว์เซอร์','ສະບາຍດີ','សួស្តី','မင်္ဂလာပါ','Xin chào Việt Nam','こんにちは','안녕하세요','你好世界','مرحبا','¡Hola! Ça va? Olá!','❤️ 👻 💀 🤍 🥰 👍🏻 👨‍👩‍👧‍👦','今日はご来店いただき、誠にありがとうございます。またのお越しをお待ちしております。','مرحبا بكم في My LED Sign 2026','أهلا وسهلا بكم في متجرنا. نتمنى لكم يوما سعيدا ونراكم قريبا'];
+const EMOJIS=['❤️','😍','🥰','😂','🥳','👏','🔥','💪','✨','👍','🙏','🎉','💖','⭐','😭','👋'];
+function detectLang(){const n=(navigator.language||'en').toLowerCase().slice(0,2);return T[n]?n:'en'}
+
+/* ---------- สถานะ ---------- */
+const MODES=['left','right','still','up','down'];
+const DEF={message:'สวัสดี 👋 HELLO!',paging:false,fx:'none',style:'dots',dot:'medium',mode:'left',speed:'42',size:'70',mirror:false,color:'#ffdf38',lang:detectLang()};
+let state={...DEF},saved=[];
+try{
+  const old=JSON.parse(localStorage.getItem('led2-settings')||'{}');
+  if(!old.mode){old.mode=old.static?'still':(old.direction==='right'?'right':'left')}
+  delete old.static;delete old.direction;
+  state={...state,...old};
+  saved=JSON.parse(localStorage.getItem('led2-saved')||'[]');if(!Array.isArray(saved))saved=[];
+}catch(e){}
+if(!T[state.lang])state.lang='en';
+if(!MODES.includes(state.mode))state.mode='left';
+if(!['none','pulse','bounce','twinkle'].includes(state.fx))state.fx='none';
+const persist=()=>{try{localStorage.setItem('led2-settings',JSON.stringify(state))}catch(e){}};
+const persistSaved=()=>{try{localStorage.setItem('led2-saved',JSON.stringify(saved))}catch(e){}};
+const t=k=>(T[state.lang]&&T[state.lang][k])||T.en[k];
+const COLORS=['#ffdf38','#ff4242','#3dff79','#47cfff','#ffffff','rainbow'];
+
+/* ---------- เมนู ---------- */
+const langSel=$('lang');
+LANGS.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;langSel.appendChild(o)});
+langSel.onchange=()=>{state.lang=langSel.value;persist();applyLang()};
+const sw=$('swatches');
+COLORS.forEach(v=>{const b=document.createElement('button');b.type='button';b.className='swatch';b.dataset.color=v;
+  b.style.background=v==='rainbow'?'conic-gradient(red,orange,yellow,lime,cyan,blue,magenta,red)':v;
+  b.onclick=()=>{state.color=v;changed()};sw.appendChild(b)});
+const emoBox=$('emojis');
+EMOJIS.forEach(em=>{const b=document.createElement('button');b.type='button';b.textContent=em;b.setAttribute('aria-label',em);b.onclick=()=>{state.message=em;state.mode='still';$('message').value=em;changed(true)};emoBox.appendChild(b)});
+const testBox=$('tests');
+TESTS.forEach(s=>{const b=document.createElement('button');b.type='button';b.textContent=s.length>22?s.slice(0,20)+'…':s;b.onclick=()=>{state.message=s;$('message').value=s;changed(true)};testBox.appendChild(b)});
+
+function applyLang(){
+  document.documentElement.lang=state.lang;
+  document.querySelectorAll('[data-i]').forEach(el=>{el.textContent=t(el.dataset.i)});
+  $('message').placeholder=t('ph');
+  const names=t('colors');
+  sw.querySelectorAll('button').forEach((b,i)=>{b.title=names[i];b.setAttribute('aria-label',names[i])});
+  langSel.value=state.lang;renderSaved();refreshLabels();
+}
+function refreshLabels(){
+  $('speedVal').textContent=state.speed+'%';
+  const still=state.mode==='still';
+  $('sizeVal').textContent=still?t('auto'):state.size+'%';
+  $('size').disabled=still;$('speed').disabled=still&&state.fx==='none';$('fx').classList.toggle('off',!still);
+  $('modeNote').textContent=t(still?'pages':(state.mode==='up'||state.mode==='down')?'noteV':'noteH');
+}
+function refresh(){
+  const m=$('message');if(document.activeElement!==m)m.value=state.message;
+  $('speed').value=state.speed;$('size').value=state.size;$('mirror').checked=!!state.mirror;$('paging').checked=!!state.paging;
+  ['style','dot','mode','fx'].forEach(id=>$(id).querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===state[id])));
+  sw.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.color===state.color));
+  refreshLabels();
+}
+let resetOffset=true,page=0,pageClock=0;
+function changed(restart){persist();refresh();if(restart){resetOffset=true;page=0;pageClock=0}}
+$('message').addEventListener('input',e=>{state.message=e.target.value;changed(true)});
+$('speed').addEventListener('input',e=>{state.speed=e.target.value;changed()});
+$('size').addEventListener('input',e=>{state.size=e.target.value;changed(true)});
+$('mirror').addEventListener('input',e=>{state.mirror=e.target.checked;changed()});
+$('paging').addEventListener('input',e=>{state.paging=e.target.checked;changed(true)});
+['style','dot','mode','fx'].forEach(id=>$(id).addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v){state[id]=v;changed(true)}}));
+
+/* ---------- จัดข้อความ: ตัดคำ ไม่แยกสระวรรณยุกต์ออกจากพยัญชนะ ---------- */
+const FONT='system-ui,"Noto Sans Thai","Noto Sans Lao","Noto Sans Khmer","Noto Sans Myanmar","Noto Sans CJK JP","Noto Sans Arabic","Noto Sans",sans-serif';
+const DOTROWS={fine:64,medium:48,large:34};
+const MIN_DOTS=20;          // ตัวอักษรต้องสูงอย่างน้อยประมาณนี้ (นับเป็นเม็ดไฟ) ถึงจะอ่านไทยออก
+const pageMs=lines=>{const n=chars(lines.join('')).length;return Math.max(3000,Math.min(10000,2200+n*110))};
+const meas=document.createElement('canvas').getContext('2d');
+let segWord=null,segChar=null;
+try{segWord=new Intl.Segmenter(undefined,{granularity:'word'});segChar=new Intl.Segmenter(undefined,{granularity:'grapheme'})}catch(e){}
+const words=s=>segWord?Array.from(segWord.segment(s),x=>x.segment):s.split(/(\s+)/).filter(Boolean);
+const chars=s=>segChar?Array.from(segChar.segment(s),x=>x.segment):Array.from(s);
+const setFont=fs=>{meas.font=`700 ${fs}px ${FONT}`};
+const tw=s=>meas.measureText(s).width;
+
+function wrap(userLines,fs,maxW){
+  setFont(fs);const out=[];out.hard=[];
+  userLines.forEach(L=>{wrapOne(L,maxW,out);out.hard[out.length-1]=true});
+  if(!out.length)out.push(' ');
+  return out;
+}
+function wrapOne(L,maxW,out){
+    if(!L.trim()){out.push('');return}
+    if(tw(L)<=maxW){out.push(L);return}
+    let cur='';
+    words(L).forEach(w=>{
+      if(tw((cur+w).trimEnd())<=maxW){cur+=w;return}
+      if(cur.trim())out.push(cur.trimEnd());
+      cur=w.trimStart();
+      if(tw(cur)>maxW){ // คำเดียวยาวเกินบรรทัด: ตัดทีละตัวอักษรแบบรวมสระวรรณยุกต์
+        let piece='';
+        chars(cur).forEach(g=>{if(piece&&tw(piece+g)>maxW){out.push(piece);piece=g}else piece+=g});
+        cur=piece;
+      }
+    });
+    if(cur.trim())out.push(cur.trimEnd());
+}
+const RTLCH=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/,LETTER=/\p{L}/u;
+function lineDir(s){for(const ch of s){if(RTLCH.test(ch))return'rtl';if(LETTER.test(ch))return'ltr'}return'ltr'}
+function stack(lines,fs){
+  setFont(fs);
+  const L=lines.map(s=>{const dir=lineDir(s);meas.direction=dir;const m=meas.measureText(s||' '),has=!!s.trim();
+    return{s,dir,w:has?m.width:0,a:Math.max(has?(m.actualBoundingBoxAscent||0):0,fs*.72),d:Math.max(has?(m.actualBoundingBoxDescent||0):0,fs*.22)}});
+  const gap=fs*.2;let h=gap*(L.length-1);L.forEach(l=>h+=l.a+l.d);
+  return{L,gap,h,w:Math.max(1,...L.map(l=>l.w)),fs};
+}
+
+let layoutCache={key:''};
+function layout(W,H){
+  const dots=state.style==='dots',eH=Math.min(H,W*.62);
+  const step=dots?Math.max(3,Math.round(eH/(DOTROWS[state.dot]||48))):1;
+  const key=[state.message,state.style,state.dot,state.size,state.mode,!!state.paging,W,H].join('|');
+  if(layoutCache.key===key)return layoutCache;
+  const fsMin=Math.min(dots?step*MIN_DOTS:eH*.14,H*.6);
+  const sz=Number(state.size)/100,mode=state.mode;
+  let user=(state.message||'').replace(/\r/g,'').split('\n');
+  while(user.length>1&&!user[user.length-1].trim())user.pop();
+  if(!user.join('').trim())user=[' '];
+  const cols=Math.ceil(W/step),rows=Math.ceil(H/step);
+  let fs,pages,blockW,blockH;
+  if(mode==='left'||mode==='right'){
+    fs=Math.max(fsMin,Math.min(eH*sz*.72,H*.75));
+    const one=[user.filter(l=>l.trim()).join('      ')||' '];
+    const st=stack(one,fs);
+    pages=[one];blockW=Math.max(step,Math.ceil((st.w+fs*.4)/step)*step);blockH=rows*step;
+  }else if(mode==='up'||mode==='down'){
+    fs=Math.max(fsMin,Math.min(eH*sz*.42,H*.6));
+    const ls=wrap(user,fs,W*.92),st=stack(ls,fs);
+    pages=[ls];blockW=cols*step;blockH=Math.ceil((st.h+fs*.35)/step)*step;
+  }else{ // หยุดนิ่ง: ขยายให้ใหญ่ที่สุด ถ้าเล็กกว่าขั้นต่ำ แบ่งหน้า
+    const maxW=W*.94,maxH=H*.88;
+    const s1=stack(user,100);const fsA=Math.floor(100*Math.min(maxW/s1.w,maxH/s1.h));
+    const fits=f=>stack(wrap(user,f,maxW),f).h<=maxH;
+    let best=0;
+    const lowF=state.paging?fsMin:4;
+    if(fits(lowF)){let lo=lowF,hi=Math.max(fsMin+1,Math.floor(maxH));for(let i=0;i<14;i++){const mid=(lo+hi)/2;if(fits(mid))lo=mid;else hi=mid}best=Math.floor(lo)}
+    if(fsA>=lowF&&fsA*1.25>=best){fs=fsA;pages=[user]}
+    else if(best){fs=best;pages=[wrap(user,fs,maxW)]}
+    else{
+      fs=fsMin;const all=wrap(user,fs,maxW),hard=all.hard||[],N=all.length;
+      const st1=stack(all,fs),hh=st1.L.map(l=>l.a+l.d),g=st1.gap;
+      const fitR=(i,j)=>{let h=g*(j-i-1);for(let k=i;k<j;k++)h+=hh[k];return h<=maxH||j-i===1};
+      let n=0;for(let i=0;i<N;){let j=i+1;while(j<N&&fitR(i,j+1))j++;n++;i=j}
+      // เกลี่ยหน้า: จำนวนหน้าเท่าเดิม แต่ให้แต่ละหน้ามีบรรทัดใกล้กัน และพยายามตัดหน้าตรงจบประโยค/บรรทัดที่พิมพ์เอง
+      const avg=N/n,good=j=>hard[j-1]||/[.!?。！？؟…:;,،]$/.test((all[j-1]||'').trim());
+      const INF=1e9,dp=[],from=[];for(let k=0;k<=n;k++){dp.push(new Array(N+1).fill(INF));from.push(new Array(N+1).fill(-1))}
+      dp[0][0]=0;
+      for(let k=1;k<=n;k++)for(let j=1;j<=N;j++)for(let i=j-1;i>=0;i--){
+        if(!fitR(i,j))break;if(dp[k-1][i]>=INF)continue;
+        const c=dp[k-1][i]+Math.pow(j-i-avg,2)+(j<N&&!good(j)?.6:0);
+        if(c<dp[k][j]){dp[k][j]=c;from[k][j]=i}
+      }
+      pages=[];
+      if(dp[n][N]<INF){let j=N;for(let k=n;k>0;k--){const i=from[k][j];pages.unshift(all.slice(i,j));j=i}}
+      else{for(let i=0;i<N;){let j=i+1;while(j<N&&fitR(i,j+1))j++;pages.push(all.slice(i,j));i=j}}
+      pages=pages.map(p=>{while(p.length>1&&!p[0].trim())p.shift();return p});
+    }
+    blockW=cols*step;blockH=rows*step;
+    // แต่ละหน้าขยายให้ใหญ่ที่สุดเท่าที่จอให้ (หน้าที่มีคำน้อยจะตัวใหญ่กว่า)
+    var pageFs=pages.map(pl=>{const s0=stack(pl,100);return Math.max(fs,Math.floor(100*Math.min(maxW/s0.w,maxH/s0.h)))});
+  }
+  layoutCache={key,dots,step,fs,pages,pageFs:mode==='still'?pageFs:null,blockW,blockH,mode};
+  return layoutCache;
+}
+
+/* ---------- วาดเม็ดไฟ ---------- */
+const MAXCHUNK=4096;
+const srcC=document.createElement('canvas'),srcX=srcC.getContext('2d',{willReadFrequently:true});
+const miniC=document.createElement('canvas'),miniX=miniC.getContext('2d',{willReadFrequently:true});
+let rasterCache=new Map(),rasterBase='',sprites=new Map(),spriteStep=0,unlitPattern=null,patternStep=0;
+function hueRGB(h){h/=60;const f=n=>{const k=(n+h)%6;return Math.round(255*(1-Math.max(0,Math.min(k,4-k,1))))};return[f(5),f(3),f(1)]}
+function hexRGB(hex){const n=parseInt(hex.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255]}
+function sprite(rgb,step){
+  if(spriteStep!==step){sprites.clear();spriteStep=step}
+  const key=rgb.join(',');let s=sprites.get(key);if(s)return s;
+  const size=Math.ceil(step*2.6),c=document.createElement('canvas');c.width=c.height=size;
+  const x=c.getContext('2d'),m=size/2,[r,g,b]=rgb;
+  const grd=x.createRadialGradient(m,m,0,m,m,m);
+  grd.addColorStop(0,`rgba(${r},${g},${b},.5)`);grd.addColorStop(.42,`rgba(${r},${g},${b},.16)`);grd.addColorStop(1,`rgba(${r},${g},${b},0)`);
+  x.fillStyle=grd;x.fillRect(0,0,size,size);
+  x.beginPath();x.arc(m,m,step*.38,0,Math.PI*2);x.fillStyle=`rgb(${r},${g},${b})`;x.fill();
+  x.beginPath();x.arc(m-step*.1,m-step*.1,step*.14,0,Math.PI*2);x.fillStyle='rgba(255,255,255,.35)';x.fill();
+  sprites.set(key,c);return c;
+}
+function unlit(ctx,step){
+  if(unlitPattern&&patternStep===step)return unlitPattern;
+  const c=document.createElement('canvas');c.width=c.height=step;const x=c.getContext('2d');
+  x.beginPath();x.arc(step/2,step/2,step*.38,0,Math.PI*2);x.fillStyle='#181818';x.fill();
+  unlitPattern=ctx.createPattern(c,'repeat');patternStep=step;return unlitPattern;
+}
+function raster(W,H,scale=1){
+  const lo=layout(W,H),pg=page%lo.pages.length;
+  const key=lo.key+'|'+state.color+'|'+pg;
+  if(key!==rasterBase){rasterCache.clear();rasterBase=key}
+  const sk=scale.toFixed(3);if(rasterCache.has(sk))return rasterCache.get(sk);
+  const {dots,step,blockW,blockH}=lo,fs=(lo.pageFs?lo.pageFs[pg]:lo.fs)*scale,st=stack(lo.pages[pg],fs);
+  const top=(lo.mode==='up'||lo.mode==='down')?fs*.15:(blockH-st.h)/2;
+  const rainbow=state.color==='rainbow',base=rainbow?null:hexRGB(state.color);
+  function drawText(c,x0,y0,fill){
+    c.font=`700 ${fs}px ${FONT}`;c.textBaseline='alphabetic';c.textAlign='left';c.fillStyle=fill;
+    let y=top;st.L.forEach(l=>{y+=l.a;c.direction=l.dir;if(l.s.trim())c.fillText(l.s,(blockW-l.w)/2-x0,y-y0);y+=l.d+st.gap});
+  }
+  const CS=Math.max(step,Math.floor(MAXCHUNK/step)*step),chunks=[];
+  for(let y0=0;y0<blockH;y0+=CS)for(let x0=0;x0<blockW;x0+=CS){
+    const cw=Math.min(CS,blockW-x0),chh=Math.min(CS,blockH-y0);
+    const out=document.createElement('canvas');out.width=cw;out.height=chh;const oc=out.getContext('2d');
+    if(!dots){
+      let fill=state.color;
+      if(rainbow){fill=oc.createLinearGradient(-x0,0,blockW-x0,0);['#ff3c5f','#ffc13a','#eaff4d','#46ef84','#36caff','#a05cff'].forEach((c,i)=>fill.addColorStop(i/5,c))}
+      drawText(oc,x0,y0,fill);
+    }else{
+      const cols=cw/step+2,rows=chh/step+2;
+      srcC.width=cw+2*step;srcC.height=chh+2*step;srcX.clearRect(0,0,srcC.width,srcC.height);
+      // วาดสองรอบ (ขาว/ดำ): จุดที่สีเปลี่ยนตาม = ตัวหนังสือ, จุดที่สีเหมือนเดิม = อีโมจิสีจริง
+      miniC.width=cols;miniC.height=rows;
+      const sample=fill=>{srcX.clearRect(0,0,srcC.width,srcC.height);drawText(srcX,x0-step,y0-step,fill);
+        miniX.clearRect(0,0,cols,rows);miniX.imageSmoothingEnabled=true;miniX.imageSmoothingQuality='high';
+        miniX.drawImage(srcC,0,0,srcC.width,srcC.height,0,0,cols,rows);return miniX.getImageData(0,0,cols,rows).data};
+      const px=sample('#fff'),pk=sample('#000');
+      for(let cy=0;cy<rows;cy++)for(let cx=0;cx<cols;cx++){
+        const i=(cy*cols+cx)*4,a=px[i+3];if(a<135)continue;
+        const r=px[i],g=px[i+1],b=px[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+        let rgb;
+        const diff=Math.abs(r-pk[i])+Math.abs(g-pk[i+1])+Math.abs(b-pk[i+2]);
+        if(diff>150){if(rainbow){const col=Math.round(x0/step)+cx-1;rgb=hueRGB((Math.floor(col*6/10)*10)%360)}else rgb=base}
+        else{if(mx<40)continue;const k=Math.min(255/mx,1.8),q=v=>Math.min(255,Math.round(v*k/32)*32);rgb=[q(r),q(g),q(b)]}
+        const s=sprite(rgb,step);
+        oc.drawImage(s,(cx-1+.5)*step-s.width/2,(cy-1+.5)*step-s.width/2);
+      }
+    }
+    chunks.push({x:x0,y:y0,w:cw,h:chh,c:out});
+  }
+  const res={key,chunks,artW:blockW,artH:blockH,step,dots,pages:lo.pages.length,mode:lo.mode};
+  rasterCache.set(sk,res);return res;
+}
+
+/* ---------- เล่นภาพ ---------- */
+let offset=0,last=0,rotated=false,lastPages=1,fxTime=0;
+// ความเร็วเอฟเฟกต์: ใช้ตัวปรับความเร็วเดิม 42% = ปกติ, ช้าสุด 0.4 เท่า, เร็วสุด 2.5 เท่า
+const fxRate=()=>{const s=Number(state.speed);return s<=42?.4+.6*(s-1)/41:1+1.5*(s-42)/58};
+function paint(canvas,dt){
+  const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
+  const CW=Math.max(1,Math.round(rect.width*dpr)),CH=Math.max(1,Math.round(rect.height*dpr));
+  if(canvas.width!==CW||canvas.height!==CH){canvas.width=CW;canvas.height=CH;resetOffset=true}
+  // จอเต็มแต่ยังเป็นแนวตั้งและมีการวิ่งแนวนอน: หมุนป้ายให้ใช้ด้านยาว
+  const vertMode=state.mode==='up'||state.mode==='down';
+  const rot=canvas.id==='screen'&&CH>CW*1.05&&!vertMode;
+  if(rot!==rotated){rotated=rot;resetOffset=true}
+  const W=rot?CH:CW,H=rot?CW:CH;
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,CW,CH);
+  const lo=layout(W,H);
+  if(state.mode==='still'&&lo.pages.length>1){pageClock+=dt;if(pageClock>=pageMs(lo.pages[page%lo.pages.length])){pageClock=0;page=(page+1)%lo.pages.length}}
+  lastPages=state.mode==='still'?lo.pages.length:1;
+  // เอฟเฟกต์ (เฉพาะหยุดนิ่ง): เต้น = ขยายเป็นจังหวะหัวใจ, เด้ง = กระโดดขึ้นลง, ระยิบ = สว่างหรี่ช้า ๆ
+  let scale=1,bob=0,alpha=1;
+  if(state.mode==='still'&&state.fx!=='none'){
+    fxTime+=dt*fxRate()/1000;const tt=fxTime;
+    if(state.fx==='pulse'){const ph=(tt%1.1)/1.1,bump=(c,w)=>Math.max(0,1-Math.abs(ph-c)/w);
+      const v=Math.min(1,bump(.1,.1)+.7*bump(.34,.1));scale=.88+.12*(Math.round(v*6)/6)}
+    else if(state.fx==='bounce'){bob=-Math.abs(Math.sin(Math.PI*tt/.9))*H*.07}
+    else if(state.fx==='twinkle'){alpha=.55+.45*(.5+.5*Math.sin(tt*2*Math.PI/1.4))}
+  }
+  const art=raster(W,H,scale),step=art.step,snap=v=>art.dots?Math.round(v/step)*step:v;
+  const v=Math.min(H,W*.62)*(.25+Math.pow(Number(state.speed)/100,1.5)*4);
+  const pos=[];let sx=0,sy=0;
+  if(art.mode==='left'||art.mode==='right'){
+    const gap=art.dots?Math.ceil(W*.25/step)*step:Math.round(W*.25),cycle=art.artW+gap,y=snap((H-art.artH)/2);
+    if(resetOffset){offset=art.mode==='left'?W:-art.artW;resetOffset=false}
+    offset+=(art.mode==='left'?-1:1)*v*dt/1000;
+    if(Math.abs(offset)>cycle*4)offset=((offset%cycle)+cycle)%cycle;
+    let x=((offset%cycle)+cycle)%cycle;if(x>0)x-=cycle;
+    for(;x<W;x+=cycle)pos.push([x,y]);sx=offset;sy=y;
+  }else if(art.mode==='up'||art.mode==='down'){
+    const gap=art.dots?Math.ceil(H*.35/step)*step:Math.round(H*.35),cycle=art.artH+gap,x=snap((W-art.artW)/2);
+    if(resetOffset){offset=art.mode==='up'?H:-art.artH;resetOffset=false}
+    offset+=(art.mode==='up'?-1:1)*v*dt/1000;
+    if(Math.abs(offset)>cycle*4)offset=((offset%cycle)+cycle)%cycle;
+    let y=((offset%cycle)+cycle)%cycle;if(y>0)y-=cycle;
+    for(;y<H;y+=cycle)pos.push([x,y]);sx=x;sy=offset;
+  }else{
+    const x=snap((W-art.artW)/2),y=snap((H-art.artH)/2+bob);pos.push([x,y]);sx=x;sy=y;resetOffset=false;
+  }
+  if(rot)ctx.setTransform(0,1,-1,0,CW,0);
+  if(state.mirror)ctx.transform(-1,0,0,1,W,0);
+  if(art.dots){
+    const p=unlit(ctx,step),m=q=>((q%step)+step)%step;
+    p.setTransform(new DOMMatrix().translateSelf(m(sx),m(sy)));ctx.fillStyle=p;ctx.fillRect(0,0,W,H);
+  }
+  ctx.globalAlpha=alpha;
+  pos.forEach(([x,y])=>art.chunks.forEach(ch=>{const dx=x+ch.x,dy=y+ch.y;if(dx+ch.w>=0&&dx<=W&&dy+ch.h>=0&&dy<=H)ctx.drawImage(ch.c,dx,dy)}));
+  ctx.globalAlpha=1;
+  if(art.mode==='still'&&art.pages>1){ // จุดบอกหน้า
+    const r=Math.max(3,H*.012),gapP=r*3.4,start=W/2-(art.pages-1)*gapP/2,y=H-r*3;
+    for(let i=0;i<art.pages;i++){ctx.beginPath();ctx.arc(start+i*gapP,y,r,0,Math.PI*2);ctx.fillStyle=i===page%art.pages?'#ffffff':'#4a4a4a';ctx.fill()}
+  }
+}
+function tick(tm){
+  const dt=Math.min(60,tm-(last||tm));last=tm;
+  paint(document.body.classList.contains('show')?$('screen'):$('preview'),dt);
+  requestAnimationFrame(tick);
+}
+
+/* ---------- เต็มจอ ---------- */
+let wake=null,toastTimer=0;
+function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600)}
+async function launch(){
+  document.body.classList.add('show');resetOffset=true;page=0;pageClock=0;$('exit').classList.remove('show');
+  try{await $('display').requestFullscreen()}catch(e){}
+  const vert=state.mode==='up'||state.mode==='down';
+  try{if(!vert&&screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape')}catch(e){}
+  try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(e){}
+  if(saved.length>1)toast(t('hint'));
+}
+async function exit(){
+  document.body.classList.remove('show');resetOffset=true;
+  try{if(document.fullscreenElement)await document.exitFullscreen()}catch(e){}
+  try{screen.orientation.unlock()}catch(e){}
+  try{if(wake)await wake.release()}catch(e){}wake=null;
+}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('show'))exit()});
+document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&document.body.classList.contains('show')&&navigator.wakeLock){try{wake=await navigator.wakeLock.request('screen')}catch(e){}}});
+$('launch').onclick=launch;$('previewFull').onclick=launch;$('exit').onclick=e=>{e.stopPropagation();exit()};
+$('display').addEventListener('click',e=>{
+  if(e.target===$('exit'))return;
+  const r=rotated?e.clientY/window.innerHeight:e.clientX/window.innerWidth;
+  if((r<.33||r>.67)&&lastPages>1){
+    page=r<.33?(page-1+lastPages)%lastPages:(page+1)%lastPages;pageClock=0;
+  }else if((r<.33||r>.67)&&saved.length){
+    let i=saved.indexOf(state.message);
+    i=r<.33?(i<=0?saved.length-1:i-1):(i+1)%saved.length;
+    state.message=saved[i];changed(true);toast(saved[i]);
+  }else $('exit').classList.toggle('show');
+});
+
+/* ---------- ข้อความที่บันทึก ---------- */
+function renderSaved(){
+  const root=$('saved');root.replaceChildren();
+  if(!saved.length){const s=document.createElement('span');s.className='empty';s.textContent=t('none');root.appendChild(s);return}
+  saved.forEach((txt,i)=>{
+    const wrapEl=document.createElement('div');wrapEl.className='item';
+    const b=document.createElement('button');b.className='pill';b.textContent=txt.replace(/\n/g,' / ').slice(0,40);
+    b.onclick=()=>{state.message=txt;changed(true)};
+    const d=document.createElement('button');d.className='pill del';d.textContent='×';d.setAttribute('aria-label','× '+txt);
+    d.onclick=()=>{saved.splice(i,1);persistSaved();renderSaved()};
+    wrapEl.append(b,d);root.appendChild(wrapEl);
+  });
+}
+$('save').onclick=()=>{const s=state.message.trim();if(!s)return alert(t('empty'));if(!saved.includes(s))saved.unshift(s);saved=saved.slice(0,30);persistSaved();renderSaved()};
+$('reset').onclick=()=>{const lang=state.lang;state={...DEF,lang};changed(true)};
+
+applyLang();refresh();requestAnimationFrame(tick);
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+</script>
+</body>
+</html>
