@@ -4,12 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
+<meta name="app-version" content="0.6.0">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
-<title>My LED Sign</title>
+<title>My LED Sign V0.6.0</title>
 <style>
+/* V0.5.0: ของที่ใส่ hidden ต้องซ่อนจริง แม้ CSS เดิมกำหนด display ไว้ */
+[hidden]{display:none!important}
 :root{
   --bg:#eef1f7;--panel:#ffffff;--field:#f6f8fc;--text:#10162a;--muted:#5a6782;--line:#c9d1e0;--pill:#e6ebf4;--accent:#1f8fd0;--accentText:#ffffff;--frame:#c4ccdb;
   color-scheme:light;box-sizing:border-box;
@@ -27,6 +30,8 @@ button{cursor:pointer}
 .wrap{max-width:680px;margin:auto;padding:0 16px}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:18px;padding-bottom:10px}
 h1{font-size:23px;margin:0}
+.ver{font-size:13px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;vertical-align:middle;white-space:nowrap}
+.cdot{display:inline-block;box-sizing:content-box;width:8px;height:8px;border:3px solid #000;border-radius:50%;margin-right:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(255,255,255,.35)}
 .tag{color:var(--muted);font-size:13px}
 .langsel{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:7px 8px;max-width:46%}
 .preview{position:relative;background:#000;border:2px solid var(--frame);border-radius:16px;overflow:hidden;aspect-ratio:16/8;touch-action:manipulation}
@@ -51,6 +56,20 @@ textarea{width:100%;min-height:80px;resize:vertical;background:var(--field);colo
 .swatches{display:flex;gap:9px;flex-wrap:wrap}
 .swatch{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);padding:0}
 .swatch.active{outline:3px solid var(--text);outline-offset:2px}
+.swatch.custom{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--text);cursor:pointer;background:var(--field);border:2px dashed var(--muted)}
+.palette{display:none;grid-template-columns:repeat(12,1fr);gap:4px;margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--field)}
+.palette.open{display:grid}
+.mini{position:fixed;top:0;left:0;right:0;z-index:40;display:none;padding:6px 16px 8px;background:var(--bg);box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.mini.on{display:block}
+.mini canvas{display:block;width:100%;max-width:648px;height:76px;margin:auto;border-radius:10px;border:2px solid var(--frame);background:#000}
+.cwarn{display:none;margin-top:10px;padding:10px 12px;border-radius:12px;background:#fff4d6;color:#5a4300;border:1px solid #f0d27a;font-size:14px}
+.cwarn.on{display:block}
+.cwarn button{margin-top:8px}
+#swap:disabled{opacity:.45}
+.swatch.recent{width:30px;height:30px;align-self:center}
+.reclab{flex-basis:100%;font-size:12px;color:var(--muted);margin:2px 0 -4px}
+.palette button{aspect-ratio:1;border-radius:6px;border:1px solid rgba(128,128,128,.35);padding:0;min-width:0}
+.palette button.active{outline:3px solid var(--text);outline-offset:1px}
 .check{display:flex;gap:9px;align-items:center;margin-top:13px;font-size:14px}
 .check input{width:19px;height:19px;accent-color:var(--accent)}
 .buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
@@ -71,68 +90,121 @@ textarea{width:100%;min-height:80px;resize:vertical;background:var(--field);colo
 #toast.show{opacity:1}
 body.show #display{display:block}
 body.show{overflow:hidden}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;padding:6px 4px 6px}
+.tcard{flex:none;border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text);font-size:13px;width:100%;min-width:0}
+.tface{position:relative;width:100%;height:60px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:2px solid var(--line);overflow:hidden}
+.tcard.active .tface{outline:3px solid var(--text);outline-offset:2px}
+.ttxt{position:relative;font-weight:800;font-size:16px;white-space:nowrap;font-family:system-ui,"Noto Sans Thai",sans-serif}
+.ttxt.rb{background:linear-gradient(90deg,#ff3c5f,#ffc13a,#eaff4d,#46ef84,#36caff,#a05cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tface.tdots::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,transparent 42%,rgba(0,0,0,.5) 62%);background-size:3px 3px;pointer-events:none}
+.tedit{display:none;position:absolute;top:2px;right:2px;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;font-size:15px;font-weight:700;color:#fff;background:rgba(0,0,0,.72);box-shadow:0 0 0 1.5px #fff;z-index:1}
+.tcard.edited .tedit{display:block}
+.tname{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* V0.5.0 แท็บ */
+.preview .swapbtn{position:absolute;left:9px;bottom:9px;min-width:44px;min-height:44px;padding:0 10px;background:#20283cc9;border:1px solid #536079;color:#fff;border-radius:12px;font-size:20px;line-height:1}
+.tabs{display:flex;gap:4px;margin:14px 0 0;background:var(--pill);border-radius:14px;padding:4px}
+.tabs button{flex:1 1 0;min-width:0;border:0;background:transparent;color:var(--muted);border-radius:11px;padding:7px 2px;font-size:13px;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:2px;overflow-wrap:anywhere}
+.tabs button .ti{font-size:18px}
+.tabs button[aria-selected="true"]{background:var(--panel);color:var(--text);font-weight:700;box-shadow:0 0 0 1px var(--line)}
+.pane .field:first-child{margin-top:4px}
+.hint{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+.actions{display:flex;gap:9px;margin-top:14px}
+.actions .primary{flex:1 1 auto}
+.pill.small{padding:7px 12px;font-size:13px}
+.devbox{margin-top:14px;font-size:13px;color:var(--muted)}
+.devbox summary{cursor:pointer}
+.installbar{padding-bottom:8px}
+.pwainfo{margin-top:8px;font-size:12px;word-break:break-all}
 @media (min-width:600px){.preview{aspect-ratio:16/6}}
 @media (prefers-reduced-motion:reduce){#exit,#toast{transition:none}}
 </style>
 </head>
 <body>
 <header class="wrap">
-  <div><h1>✨ My LED Sign</h1><div class="tag" data-i="tag"></div></div>
+  <div><h1>✨ My LED Sign <span class="ver">V0.6.0</span></h1><div class="tag" data-i="tag"></div></div>
   <select class="langsel" id="lang" aria-label="Language"></select>
 </header>
+<div class="wrap installbar" id="installBar" hidden><button class="pill small" id="installBtn" type="button" data-i="install"></button></div>
 
+<div class="mini" id="mini"><canvas id="minicv"></canvas></div>
 <main class="wrap">
-  <div class="preview"><canvas id="preview"></canvas><button class="tap" id="previewFull" data-i="full"></button></div>
+  <div class="preview"><canvas id="preview"></canvas><button class="swapbtn" id="swap" type="button">⇄</button><button class="tap" id="previewFull" data-i="full"></button></div>
+  <div class="cwarn" id="cwarn"><span data-i="warn"></span><br><button class="pill" id="cfix" data-i="fix"></button></div>
 
   <div class="panel">
     <label class="field" for="message" data-i="msg"></label>
     <textarea id="message" maxlength="300"></textarea>
-
-    <label class="field" data-i="tests"></label>
-    <div class="chips" id="tests"></div>
-
     <label class="field" data-i="emo"></label>
     <div class="chips emo" id="emojis"></div>
-
-    <label class="field" data-i="mode"></label>
-    <div class="seg" id="mode">
-      <button data-v="left" data-i="mLeft"></button><button data-v="right" data-i="mRight"></button><button data-v="still" data-i="mStill"></button>
-      <button data-v="up" data-i="mUp"></button><button data-v="down" data-i="mDown"></button>
-    </div>
-    <div class="note" id="modeNote"></div>
-    <label class="check"><input type="checkbox" id="paging"> <span data-i="paging"></span></label>
-
-    <label class="field" data-i="fx"></label>
-    <div class="seg" id="fx"><button data-v="none" data-i="fxNone"></button><button data-v="pulse" data-i="fxPulse"></button><button data-v="bounce" data-i="fxBounce"></button><button data-v="twinkle" data-i="fxTwinkle"></button></div>
-
-    <label class="field" data-i="look"></label>
-    <div class="seg" id="style"><button data-v="dots" data-i="dots"></button><button data-v="smooth" data-i="smooth"></button></div>
-
-    <label class="field" data-i="dot"></label>
-    <div class="seg" id="dot"><button data-v="fine" data-i="fine"></button><button data-v="medium" data-i="med"></button><button data-v="large" data-i="large"></button></div>
-
-    <label class="field" data-i="color"></label>
-    <div class="swatches" id="swatches"></div>
-
-    <div class="grid">
-      <div><label class="field" for="speed"><span data-i="speed"></span> <span class="val" id="speedVal"></span></label>
-        <input class="range" id="speed" type="range" min="1" max="100"></div>
-      <div><label class="field" for="size"><span data-i="size"></span> <span class="val" id="sizeVal"></span></label>
-        <input class="range" id="size" type="range" min="30" max="95"></div>
-    </div>
-
-    <label class="check"><input type="checkbox" id="mirror"> <span data-i="mirror"></span></label>
-
-    <div class="buttons">
+    <div class="actions">
       <button class="pill primary" id="launch" data-i="show"></button>
       <button class="pill" id="save" data-i="save"></button>
-      <button class="pill" id="reset" data-i="reset"></button>
+      <button class="pill" id="jump" type="button">📋 <span id="jumpCount">0</span></button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabbar">
+    <button type="button" role="tab" id="tab-themes" aria-controls="pane-themes" data-tab="themes"><span class="ti" aria-hidden="true">🎨</span><span data-i="tabThemes"></span></button>
+    <button type="button" role="tab" id="tab-text" aria-controls="pane-text" data-tab="text"><span class="ti" aria-hidden="true">Aa</span><span data-i="tabText"></span></button>
+    <button type="button" role="tab" id="tab-bg" aria-controls="pane-bg" data-tab="bg"><span class="ti" aria-hidden="true">▦</span><span data-i="tabBg"></span></button>
+    <button type="button" role="tab" id="tab-motion" aria-controls="pane-motion" data-tab="motion"><span class="ti" aria-hidden="true">➜</span><span data-i="tabMotion"></span></button>
+  </div>
+
+  <div class="panel">
+    <div class="pane" id="pane-themes" role="tabpanel" aria-labelledby="tab-themes">
+      <div class="themes" id="themes"></div>
+      <div class="hint" data-i="themeHint"></div>
     </div>
 
-    <label class="field" data-i="saved"></label>
-    <div class="saved" id="saved"></div>
+    <div class="pane" id="pane-text" role="tabpanel" aria-labelledby="tab-text" hidden>
+      <label class="field" data-i="color"></label>
+      <div class="swatches" id="swatches"></div>
+      <label class="field" data-i="look"></label>
+      <div class="seg" id="style"><button data-v="dots" data-i="dots"></button><button data-v="smooth" data-i="smooth"></button></div>
+      <div id="dotBox"><label class="field" data-i="dot"></label>
+      <div class="seg" id="dot"><button data-v="fine" data-i="fine"></button><button data-v="medium" data-i="med"></button><button data-v="large" data-i="large"></button></div></div>
+      <label class="field" for="size"><span data-i="size"></span> <span class="val" id="sizeVal"></span></label>
+      <input class="range" id="size" type="range" min="30" max="95">
+      <label class="field" data-i="glow"></label>
+      <div class="seg" id="glow"><button data-v="none" data-i="gNone"></button><button data-v="soft" data-i="gSoft"></button><button data-v="normal" data-i="gNormal"></button><button data-v="strong" data-i="gStrong"></button></div>
+    </div>
+
+    <div class="pane" id="pane-bg" role="tabpanel" aria-labelledby="tab-bg" hidden>
+      <label class="field" data-i="bg"></label>
+      <div class="swatches" id="bgswatches"></div>
+      <label class="check"><input type="checkbox" id="offdots"> <span data-i="offdots"></span></label>
+      <label class="field" data-i="frame"></label>
+      <div class="seg" id="frame"><button data-v="none" data-i="frNone"></button><button data-v="line" data-i="frLine"></button><button data-v="neon" data-i="frNeon"></button><button data-v="bulbs" data-i="frBulbs"></button></div>
+      <div id="frameColorBox"><label class="field" data-i="frameColor"></label><div class="swatches" id="fswatches"></div></div>
+    </div>
+
+    <div class="pane" id="pane-motion" role="tabpanel" aria-labelledby="tab-motion" hidden>
+      <label class="field" data-i="mode"></label>
+      <div class="seg" id="mode">
+        <button data-v="left" data-i="mLeft"></button><button data-v="right" data-i="mRight"></button><button data-v="still" data-i="mStill"></button>
+        <button data-v="up" data-i="mUp"></button><button data-v="down" data-i="mDown"></button>
+      </div>
+      <div class="note" id="modeNote"></div>
+      <label class="check"><input type="checkbox" id="paging"> <span data-i="paging"></span></label>
+      <label class="field" for="speed"><span data-i="speed"></span> <span class="val" id="speedVal"></span></label>
+      <input class="range" id="speed" type="range" min="1" max="100">
+      <label class="field" data-i="fx"></label>
+      <div class="seg" id="fx"><button data-v="none" data-i="fxNone"></button><button data-v="pulse" data-i="fxPulse"></button><button data-v="bounce" data-i="fxBounce"></button><button data-v="twinkle" data-i="fxTwinkle"></button></div>
+      <label class="check"><input type="checkbox" id="mirror"> <span data-i="mirror"></span></label>
+    </div>
   </div>
-  <p class="foot"><span data-i="foot"></span> · V0.3.3</p>
+
+  <div class="panel">
+    <label class="field" id="savedHead" data-i="saved"></label>
+    <div class="saved" id="saved"></div>
+    <div class="buttons"><button class="pill small" id="reset" data-i="reset"></button></div>
+    <details class="devbox"><summary data-i="testMode"></summary>
+      <label class="field" data-i="tests"></label>
+      <div class="chips" id="tests"></div>
+      <div class="pwainfo" id="pwaInfo"></div>
+    </details>
+  </div>
+  <p class="foot"><span data-i="foot"></span></p>
 </main>
 
 <div id="display"><canvas id="screen"></canvas><button id="exit" data-i="exit"></button><div id="toast"></div></div>
@@ -173,6 +245,22 @@ const T3={"en": {"noteH": "Left/Right joins all lines into one. For multiple lin
 Object.keys(T3).forEach(k=>Object.assign(T[k],T3[k]));
 const T4={"en": {"emo": "Quick emoji", "fx": "Animation (Still mode)", "fxNone": "Off", "fxPulse": "Beat", "fxBounce": "Bounce", "fxTwinkle": "Twinkle"}, "th": {"emo": "อีโมจิด่วน", "fx": "เอฟเฟกต์เคลื่อนไหว (โหมดหยุดนิ่ง)", "fxNone": "ปิด", "fxPulse": "เต้น", "fxBounce": "เด้ง", "fxTwinkle": "ระยิบ"}, "es": {"emo": "Emojis rápidos", "fx": "Animación (modo Fijo)", "fxNone": "Apagada", "fxPulse": "Latido", "fxBounce": "Rebote", "fxTwinkle": "Destello"}, "pt": {"emo": "Emojis rápidos", "fx": "Animação (modo Parado)", "fxNone": "Desligada", "fxPulse": "Batida", "fxBounce": "Pulo", "fxTwinkle": "Brilho"}, "fr": {"emo": "Émojis rapides", "fx": "Animation (mode Fixe)", "fxNone": "Désactivée", "fxPulse": "Battement", "fxBounce": "Rebond", "fxTwinkle": "Scintillement"}, "id": {"emo": "Emoji cepat", "fx": "Animasi (mode Diam)", "fxNone": "Mati", "fxPulse": "Berdetak", "fxBounce": "Memantul", "fxTwinkle": "Berkilau"}, "vi": {"emo": "Emoji nhanh", "fx": "Hiệu ứng (chế độ Đứng yên)", "fxNone": "Tắt", "fxPulse": "Nhịp đập", "fxBounce": "Nảy", "fxTwinkle": "Lấp lánh"}, "ja": {"emo": "クイック絵文字", "fx": "アニメーション（固定モード）", "fxNone": "オフ", "fxPulse": "鼓動", "fxBounce": "バウンド", "fxTwinkle": "きらめき"}, "ko": {"emo": "빠른 이모지", "fx": "애니메이션 (고정 모드)", "fxNone": "끄기", "fxPulse": "두근두근", "fxBounce": "통통", "fxTwinkle": "반짝반짝"}, "zh": {"emo": "快捷表情", "fx": "动画（静止模式）", "fxNone": "关闭", "fxPulse": "跳动", "fxBounce": "弹跳", "fxTwinkle": "闪烁"}};
 Object.keys(T4).forEach(k=>Object.assign(T[k],T4[k]));
+const T8={"en": {"bg": "Background", "cn": {"yellow": "Yellow", "orange": "Orange", "red": "Red", "pink": "Pink", "purple": "Purple", "green": "Green", "lime": "Lime", "sky": "Sky blue", "blue": "Blue", "white": "White", "rainbow": "Rainbow", "custom": "Pick any color", "black": "Black", "navy": "Navy", "darkred": "Dark red", "darkgreen": "Dark green", "gray": "Gray"}}, "th": {"bg": "สีพื้นหลัง", "cn": {"yellow": "เหลือง", "orange": "ส้ม", "red": "แดง", "pink": "ชมพู", "purple": "ม่วง", "green": "เขียว", "lime": "เขียวมะนาว", "sky": "ฟ้า", "blue": "น้ำเงิน", "white": "ขาว", "rainbow": "สีรุ้ง", "custom": "เลือกสีเอง", "black": "ดำ", "navy": "กรมท่า", "darkred": "แดงเข้ม", "darkgreen": "เขียวเข้ม", "gray": "เทา"}}, "es": {"bg": "Fondo", "cn": {"yellow": "Amarillo", "orange": "Naranja", "red": "Rojo", "pink": "Rosa", "purple": "Morado", "green": "Verde", "lime": "Lima", "sky": "Celeste", "blue": "Azul", "white": "Blanco", "rainbow": "Arcoíris", "custom": "Elegir color", "black": "Negro", "navy": "Azul marino", "darkred": "Rojo oscuro", "darkgreen": "Verde oscuro", "gray": "Gris"}}, "pt": {"bg": "Fundo", "cn": {"yellow": "Amarelo", "orange": "Laranja", "red": "Vermelho", "pink": "Rosa", "purple": "Roxo", "green": "Verde", "lime": "Lima", "sky": "Azul-claro", "blue": "Azul", "white": "Branco", "rainbow": "Arco-íris", "custom": "Escolher cor", "black": "Preto", "navy": "Azul-marinho", "darkred": "Vermelho-escuro", "darkgreen": "Verde-escuro", "gray": "Cinza"}}, "fr": {"bg": "Fond", "cn": {"yellow": "Jaune", "orange": "Orange", "red": "Rouge", "pink": "Rose", "purple": "Violet", "green": "Vert", "lime": "Vert citron", "sky": "Bleu ciel", "blue": "Bleu", "white": "Blanc", "rainbow": "Arc-en-ciel", "custom": "Choisir une couleur", "black": "Noir", "navy": "Bleu marine", "darkred": "Rouge foncé", "darkgreen": "Vert foncé", "gray": "Gris"}}, "id": {"bg": "Warna latar", "cn": {"yellow": "Kuning", "orange": "Oranye", "red": "Merah", "pink": "Merah muda", "purple": "Ungu", "green": "Hijau", "lime": "Hijau limau", "sky": "Biru langit", "blue": "Biru", "white": "Putih", "rainbow": "Pelangi", "custom": "Pilih warna", "black": "Hitam", "navy": "Biru dongker", "darkred": "Merah tua", "darkgreen": "Hijau tua", "gray": "Abu-abu"}}, "vi": {"bg": "Màu nền", "cn": {"yellow": "Vàng", "orange": "Cam", "red": "Đỏ", "pink": "Hồng", "purple": "Tím", "green": "Xanh lá", "lime": "Xanh chanh", "sky": "Xanh da trời", "blue": "Xanh dương", "white": "Trắng", "rainbow": "Cầu vồng", "custom": "Chọn màu", "black": "Đen", "navy": "Xanh hải quân", "darkred": "Đỏ sẫm", "darkgreen": "Xanh lá đậm", "gray": "Xám"}}, "ja": {"bg": "背景色", "cn": {"yellow": "黄", "orange": "オレンジ", "red": "赤", "pink": "ピンク", "purple": "紫", "green": "緑", "lime": "黄緑", "sky": "水色", "blue": "青", "white": "白", "rainbow": "虹色", "custom": "好きな色", "black": "黒", "navy": "紺", "darkred": "えんじ", "darkgreen": "深緑", "gray": "グレー"}}, "ko": {"bg": "배경색", "cn": {"yellow": "노랑", "orange": "주황", "red": "빨강", "pink": "분홍", "purple": "보라", "green": "초록", "lime": "연두", "sky": "하늘색", "blue": "파랑", "white": "흰색", "rainbow": "무지개", "custom": "색 직접 고르기", "black": "검정", "navy": "남색", "darkred": "진한 빨강", "darkgreen": "진한 초록", "gray": "회색"}}, "zh": {"bg": "背景颜色", "cn": {"yellow": "黄色", "orange": "橙色", "red": "红色", "pink": "粉色", "purple": "紫色", "green": "绿色", "lime": "黄绿色", "sky": "天蓝色", "blue": "蓝色", "white": "白色", "rainbow": "彩虹", "custom": "自选颜色", "black": "黑色", "navy": "藏青色", "darkred": "深红色", "darkgreen": "深绿色", "gray": "灰色"}}};
+Object.keys(T8).forEach(k=>{if(T[k])Object.assign(T[k],T8[k])});
+const T9={"en": {"offdots": "Show unlit LED dots", "swap": "⇄ Swap text & background colors", "warn": "⚠ Text and background colors are too similar — it may be hard to read.", "fix": "Use a readable color", "recent": "Recent"}, "th": {"offdots": "แสดงเม็ดไฟที่ดับ", "swap": "⇄ สลับสีตัวอักษรกับพื้นหลัง", "warn": "⚠ สีตัวอักษรกับพื้นหลังใกล้กันเกินไป อาจอ่านไม่ออก", "fix": "ใช้สีที่อ่านชัด", "recent": "สีที่ใช้ล่าสุด"}, "es": {"offdots": "Mostrar puntos LED apagados", "swap": "⇄ Intercambiar colores de texto y fondo", "warn": "⚠ El texto y el fondo son muy parecidos; puede costar leerlo.", "fix": "Usar un color legible", "recent": "Recientes"}, "pt": {"offdots": "Mostrar pontos LED apagados", "swap": "⇄ Trocar cores do texto e do fundo", "warn": "⚠ O texto e o fundo estão parecidos demais; pode ficar difícil de ler.", "fix": "Usar uma cor legível", "recent": "Recentes"}, "fr": {"offdots": "Afficher les points LED éteints", "swap": "⇄ Inverser couleurs du texte et du fond", "warn": "⚠ Le texte et le fond sont trop proches : ce sera difficile à lire.", "fix": "Choisir une couleur lisible", "recent": "Récents"}, "id": {"offdots": "Tampilkan titik LED yang mati", "swap": "⇄ Tukar warna teks dan latar", "warn": "⚠ Warna teks dan latar terlalu mirip, bisa sulit dibaca.", "fix": "Pakai warna yang jelas", "recent": "Terakhir dipakai"}, "vi": {"offdots": "Hiện chấm LED tắt", "swap": "⇄ Đổi màu chữ và màu nền", "warn": "⚠ Màu chữ và màu nền quá giống nhau, có thể khó đọc.", "fix": "Dùng màu dễ đọc", "recent": "Gần đây"}, "ja": {"offdots": "消えているLEDドットを表示", "swap": "⇄ 文字色と背景色を入れ替え", "warn": "⚠ 文字と背景の色が近すぎて読みにくいかもしれません。", "fix": "読みやすい色にする", "recent": "最近使った色"}, "ko": {"offdots": "꺼진 LED 도트 표시", "swap": "⇄ 글자색과 배경색 바꾸기", "warn": "⚠ 글자색과 배경색이 너무 비슷해서 읽기 어려울 수 있어요.", "fix": "잘 보이는 색으로", "recent": "최근 사용"}, "zh": {"offdots": "显示未亮的LED点", "swap": "⇄ 交换文字和背景颜色", "warn": "⚠ 文字和背景颜色太接近，可能看不清。", "fix": "换成清晰的颜色", "recent": "最近使用"}};
+Object.keys(T9).forEach(k=>{if(T[k])Object.assign(T[k],T9[k])});
+/* T10 (V0.4.0): ธีม + แสงเรือง */
+const T10={"en": {"themes": "Themes", "glow": "Glow", "gNone": "None", "gSoft": "Soft", "gNormal": "Normal", "gStrong": "Strong", "th_classic": "LED Classic", "th_neon": "Neon", "th_minimal": "Minimal", "th_party": "Party", "th_alert": "Alert", "th_pickup": "Pickup", "th_sports": "Sports", "th_romance": "Romance", "th_birthday": "Birthday", "th_retro": "Retro"}, "th": {"themes": "ธีม", "glow": "แสงเรือง", "gNone": "ไม่มี", "gSoft": "อ่อน", "gNormal": "ปกติ", "gStrong": "แรง", "th_classic": "LED คลาสสิก", "th_neon": "นีออน", "th_minimal": "มินิมอล", "th_party": "ปาร์ตี้", "th_alert": "ฉุกเฉิน", "th_pickup": "ป้ายรับคน", "th_sports": "เชียร์กีฬา", "th_romance": "โรแมนติก", "th_birthday": "วันเกิด", "th_retro": "ย้อนยุค"}, "es": {"themes": "Temas", "glow": "Brillo", "gNone": "Ninguno", "gSoft": "Suave", "gNormal": "Normal", "gStrong": "Intenso", "th_classic": "LED Clásico", "th_neon": "Neón", "th_minimal": "Minimalista", "th_party": "Fiesta", "th_alert": "Alerta", "th_pickup": "Recogida", "th_sports": "Deportes", "th_romance": "Romántico", "th_birthday": "Cumpleaños", "th_retro": "Retro"}, "pt": {"themes": "Temas", "glow": "Brilho", "gNone": "Nenhum", "gSoft": "Suave", "gNormal": "Normal", "gStrong": "Forte", "th_classic": "LED Clássico", "th_neon": "Neon", "th_minimal": "Minimalista", "th_party": "Festa", "th_alert": "Alerta", "th_pickup": "Recepção", "th_sports": "Esportes", "th_romance": "Romântico", "th_birthday": "Aniversário", "th_retro": "Retrô"}, "fr": {"themes": "Thèmes", "glow": "Halo", "gNone": "Aucun", "gSoft": "Doux", "gNormal": "Normal", "gStrong": "Fort", "th_classic": "LED Classique", "th_neon": "Néon", "th_minimal": "Minimal", "th_party": "Fête", "th_alert": "Alerte", "th_pickup": "Accueil", "th_sports": "Sport", "th_romance": "Romantique", "th_birthday": "Anniversaire", "th_retro": "Rétro"}, "id": {"themes": "Tema", "glow": "Cahaya", "gNone": "Tidak ada", "gSoft": "Lembut", "gNormal": "Normal", "gStrong": "Kuat", "th_classic": "LED Klasik", "th_neon": "Neon", "th_minimal": "Minimalis", "th_party": "Pesta", "th_alert": "Darurat", "th_pickup": "Penjemputan", "th_sports": "Olahraga", "th_romance": "Romantis", "th_birthday": "Ulang tahun", "th_retro": "Retro"}, "vi": {"themes": "Chủ đề", "glow": "Phát sáng", "gNone": "Không", "gSoft": "Nhẹ", "gNormal": "Thường", "gStrong": "Mạnh", "th_classic": "LED cổ điển", "th_neon": "Neon", "th_minimal": "Tối giản", "th_party": "Tiệc tùng", "th_alert": "Khẩn cấp", "th_pickup": "Đón khách", "th_sports": "Thể thao", "th_romance": "Lãng mạn", "th_birthday": "Sinh nhật", "th_retro": "Hoài cổ"}, "ja": {"themes": "テーマ", "glow": "光彩", "gNone": "なし", "gSoft": "弱", "gNormal": "標準", "gStrong": "強", "th_classic": "LEDクラシック", "th_neon": "ネオン", "th_minimal": "ミニマル", "th_party": "パーティー", "th_alert": "緊急", "th_pickup": "お出迎え", "th_sports": "スポーツ", "th_romance": "ロマンチック", "th_birthday": "誕生日", "th_retro": "レトロ"}, "ko": {"themes": "테마", "glow": "글로우", "gNone": "없음", "gSoft": "약하게", "gNormal": "보통", "gStrong": "강하게", "th_classic": "LED 클래식", "th_neon": "네온", "th_minimal": "미니멀", "th_party": "파티", "th_alert": "긴급", "th_pickup": "픽업", "th_sports": "스포츠", "th_romance": "로맨틱", "th_birthday": "생일", "th_retro": "레트로"}, "zh": {"themes": "主题", "glow": "光晕", "gNone": "无", "gSoft": "柔和", "gNormal": "标准", "gStrong": "强烈", "th_classic": "LED经典", "th_neon": "霓虹", "th_minimal": "极简", "th_party": "派对", "th_alert": "紧急", "th_pickup": "接机", "th_sports": "运动", "th_romance": "浪漫", "th_birthday": "生日", "th_retro": "复古"}};
+Object.keys(T10).forEach(k=>{if(T[k])Object.assign(T[k],T10[k])});
+/* T11 (V0.4.1): กรอบ */
+const T11={"en": {"frame": "Frame", "frNone": "None", "frLine": "Line", "frNeon": "Neon", "frBulbs": "Bulbs", "frameColor": "Frame color"}, "th": {"frame": "กรอบ", "frNone": "ไม่มี", "frLine": "เส้น", "frNeon": "นีออน", "frBulbs": "หลอดไฟ", "frameColor": "สีกรอบ"}, "es": {"frame": "Marco", "frNone": "Ninguno", "frLine": "Línea", "frNeon": "Neón", "frBulbs": "Bombillas", "frameColor": "Color del marco"}, "pt": {"frame": "Moldura", "frNone": "Nenhuma", "frLine": "Linha", "frNeon": "Neon", "frBulbs": "Lâmpadas", "frameColor": "Cor da moldura"}, "fr": {"frame": "Cadre", "frNone": "Aucun", "frLine": "Ligne", "frNeon": "Néon", "frBulbs": "Ampoules", "frameColor": "Couleur du cadre"}, "id": {"frame": "Bingkai", "frNone": "Tidak ada", "frLine": "Garis", "frNeon": "Neon", "frBulbs": "Lampu", "frameColor": "Warna bingkai"}, "vi": {"frame": "Khung", "frNone": "Không", "frLine": "Viền", "frNeon": "Neon", "frBulbs": "Bóng đèn", "frameColor": "Màu khung"}, "ja": {"frame": "フレーム", "frNone": "なし", "frLine": "ライン", "frNeon": "ネオン", "frBulbs": "電球", "frameColor": "フレームの色"}, "ko": {"frame": "테두리", "frNone": "없음", "frLine": "선", "frNeon": "네온", "frBulbs": "전구", "frameColor": "테두리 색"}, "zh": {"frame": "边框", "frNone": "无", "frLine": "线条", "frNeon": "霓虹", "frBulbs": "灯泡", "frameColor": "边框颜色"}};
+Object.keys(T11).forEach(k=>{if(T[k])Object.assign(T[k],T11[k])});
+/* T12 (V0.5.0): แท็บ */
+const T12={"en": {"tabThemes": "Themes", "tabText": "Text", "tabBg": "Background", "tabMotion": "Motion", "themeHint": "Fine-tune in the other tabs", "testMode": "Test mode"}, "th": {"tabThemes": "ธีม", "tabText": "ตัวอักษร", "tabBg": "พื้นหลัง", "tabMotion": "การเคลื่อนไหว", "themeHint": "ปรับละเอียดได้ที่แท็บอื่น", "testMode": "โหมดทดสอบ"}, "es": {"tabThemes": "Temas", "tabText": "Texto", "tabBg": "Fondo", "tabMotion": "Movimiento", "themeHint": "Ajusta los detalles en las otras pestañas", "testMode": "Modo de prueba"}, "pt": {"tabThemes": "Temas", "tabText": "Texto", "tabBg": "Fundo", "tabMotion": "Movimento", "themeHint": "Ajuste os detalhes nas outras abas", "testMode": "Modo de teste"}, "fr": {"tabThemes": "Thèmes", "tabText": "Texte", "tabBg": "Fond", "tabMotion": "Mouvement", "themeHint": "Affinez dans les autres onglets", "testMode": "Mode test"}, "id": {"tabThemes": "Tema", "tabText": "Teks", "tabBg": "Latar", "tabMotion": "Gerakan", "themeHint": "Atur detail di tab lain", "testMode": "Mode uji"}, "vi": {"tabThemes": "Chủ đề", "tabText": "Chữ", "tabBg": "Nền", "tabMotion": "Chuyển động", "themeHint": "Tinh chỉnh ở các thẻ khác", "testMode": "Chế độ thử"}, "ja": {"tabThemes": "テーマ", "tabText": "文字", "tabBg": "背景", "tabMotion": "動き", "themeHint": "細かい調整は他のタブで", "testMode": "テストモード"}, "ko": {"tabThemes": "테마", "tabText": "글자", "tabBg": "배경", "tabMotion": "움직임", "themeHint": "세부 조정은 다른 탭에서", "testMode": "테스트 모드"}, "zh": {"tabThemes": "主题", "tabText": "文字", "tabBg": "背景", "tabMotion": "动态", "themeHint": "可在其他标签中细调", "testMode": "测试模式"}};
+Object.keys(T12).forEach(k=>{if(T[k])Object.assign(T[k],T12[k])});
+/* T13 (V0.6.0): ปุ่มติดตั้งแอป */
+const T13={"en": {"install": "📲 Install app"}, "th": {"install": "📲 ติดตั้งแอป"}, "es": {"install": "📲 Instalar app"}, "pt": {"install": "📲 Instalar app"}, "fr": {"install": "📲 Installer l’appli"}, "id": {"install": "📲 Pasang aplikasi"}, "vi": {"install": "📲 Cài đặt ứng dụng"}, "ja": {"install": "📲 アプリをインストール"}, "ko": {"install": "📲 앱 설치"}, "zh": {"install": "📲 安装应用"}};
+Object.keys(T13).forEach(k=>{if(T[k])Object.assign(T[k],T13[k])});
 const T5={"en": {"paging": "Split into pages when text gets too small (Still mode)", "pages": "Still: all your text stays on one screen."}, "th": {"paging": "แบ่งหน้าอัตโนมัติ เมื่อข้อความยาวจนตัวอักษรเล็กเกินไป (โหมดหยุดนิ่ง)", "pages": "หยุดนิ่ง: ข้อความทั้งหมดจะอยู่ในจอเดียว"}, "es": {"paging": "Dividir en páginas si el texto queda demasiado pequeño (modo Fijo)", "pages": "Fijo: todo el texto se queda en una sola pantalla."}, "pt": {"paging": "Dividir em páginas quando o texto ficar pequeno demais (modo Parado)", "pages": "Parado: todo o texto fica em uma única tela."}, "fr": {"paging": "Découper en pages si le texte devient trop petit (mode Fixe)", "pages": "Fixe : tout le texte reste sur un seul écran."}, "id": {"paging": "Bagi jadi beberapa halaman jika teks terlalu kecil (mode Diam)", "pages": "Diam: semua teks tetap dalam satu layar."}, "vi": {"paging": "Chia trang khi chữ quá nhỏ (chế độ Đứng yên)", "pages": "Đứng yên: toàn bộ chữ nằm trong một màn hình."}, "ja": {"paging": "文字が小さくなりすぎるときはページに分ける（固定モード）", "pages": "固定：文章はすべて1画面に表示します。"}, "ko": {"paging": "글자가 너무 작아지면 페이지로 나누기 (고정 모드)", "pages": "고정: 모든 문구를 한 화면에 표시합니다."}, "zh": {"paging": "文字太小时自动分页（静止模式）", "pages": "静止：所有文字都显示在同一屏幕上。"}};
 Object.keys(T5).forEach(k=>Object.assign(T[k],T5[k]));
 const TESTS=['ผู้ใหญ่ที่น่ารัก','กู้ภัยฉุกเฉิน','น้ำแข็งใส','ซื้อหนึ่งแถมหนึ่ง','รักนะ ❤️ LOVE YOU 😍','สู้ ๆ 💪🔥🎉','วิธีทดลองให้ได้เต็มจอจริง: อย่าเปิดในแอป Claude ให้กด ⋮ มุมขวาบน แล้วเลือกเปิดในเบราว์เซอร์','ສະບາຍດີ','សួស្តី','မင်္ဂလာပါ','Xin chào Việt Nam','こんにちは','안녕하세요','你好世界','مرحبا','¡Hola! Ça va? Olá!','❤️ 👻 💀 🤍 🥰 👍🏻 👨‍👩‍👧‍👦','今日はご来店いただき、誠にありがとうございます。またのお越しをお待ちしております。','مرحبا بكم في My LED Sign 2026','أهلا وسهلا بكم في متجرنا. نتمنى لكم يوما سعيدا ونراكم قريبا'];
@@ -181,31 +269,230 @@ function detectLang(){const n=(navigator.language||'en').toLowerCase().slice(0,2
 
 /* ---------- สถานะ ---------- */
 const MODES=['left','right','still','up','down'];
-const DEF={message:'สวัสดี 👋 HELLO!',paging:false,fx:'none',style:'dots',dot:'medium',mode:'left',speed:'42',size:'70',mirror:false,color:'#ffdf38',lang:detectLang()};
-let state={...DEF},saved=[];
+const DEF={message:'สวัสดี 👋 HELLO!',paging:false,fx:'none',style:'dots',dot:'medium',mode:'left',speed:'42',size:'70',mirror:false,color:'#ffdf38',bg:'#000000',offdots:true,glow:'normal',frame:'none',frameColor:'#ffffff',theme:'classic',lang:detectLang()};
+let state={...DEF},saved=[],lastOpened=-1;
 try{
-  const old=JSON.parse(localStorage.getItem('led2-settings')||'{}');
+  const rawSet=localStorage.getItem('led2-settings');
+  const old=JSON.parse(rawSet||'{}');
   if(!old.mode){old.mode=old.static?'still':(old.direction==='right'?'right':'left')}
   delete old.static;delete old.direction;
   state={...state,...old};
-  saved=JSON.parse(localStorage.getItem('led2-saved')||'[]');if(!Array.isArray(saved))saved=[];
+  // ผู้ใช้เก่า (V0.3.x) ยังไม่เคยเลือกธีม: หน้าตาปัจจุบันไม่ได้มาจากธีมไหน → ไม่เลือกการ์ดใด
+  if(rawSet&&!('theme' in old))state.theme='';
 }catch(e){}
 if(!T[state.lang])state.lang='en';
 if(!MODES.includes(state.mode))state.mode='left';
 if(!['none','pulse','bounce','twinkle'].includes(state.fx))state.fx='none';
 const persist=()=>{try{localStorage.setItem('led2-settings',JSON.stringify(state))}catch(e){}};
-const persistSaved=()=>{try{localStorage.setItem('led2-saved',JSON.stringify(saved))}catch(e){}};
+/* ---------- ชุดข้อมูลป้าย (V0.3.4) ----------
+   ป้ายหนึ่งอัน = ค่าทั้งหมดที่ทำให้ป้ายหน้าตาแบบนั้น (ภาษาของเมนูไม่นับ เพราะเป็นของแอป)
+   เก็บค่าจริงที่ผู้ใช้เห็น ไม่ใช่ชื่อธีม ดังนั้นถ้าผู้ใช้แก้สีเอง เปิดใหม่ก็ได้สีที่แก้
+   ที่เก็บใหม่: 'led3-saved' = {v:1, items:[...], imported:[...]}
+   ที่เก็บเก่า 'led2-saved' (รายการข้อความล้วนของ V0.3.3) ไม่แตะเลย เพื่อให้ V0.3.3 ที่ติดตั้งอยู่ยังเปิดได้ */
+const SIGN_KEYS=['message','mode','speed','size','style','dot','color','bg','offdots','fx','mirror','paging','glow','frame','frameColor'];
+// META_KEYS = ป้ายกำกับ ไม่ใช้วาด ไม่ใช้จับคู่ป้าย (sameSign/fits/currentSaved ใช้ SIGN_KEYS เท่านั้น)
+const META_KEYS=['theme'],KNOWN=[...SIGN_KEYS,...META_KEYS];
+const GLOWS=['none','soft','normal','strong'],FRAMES=['none','line','neon','bulbs'];
+const numIn=(lo,hi)=>v=>{const n=Number(v);return Number.isFinite(n)&&n>=lo&&n<=hi};
+const CHECK={
+  message:v=>typeof v==='string'&&v.trim().length>0&&v.length<=5000,
+  mode:v=>MODES.includes(v), speed:numIn(1,100), size:numIn(30,95),
+  style:v=>v==='dots'||v==='smooth', dot:v=>v==='fine'||v==='medium'||v==='large',
+  color:v=>v==='rainbow'||(typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)),
+  bg:v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v),
+  offdots:v=>typeof v==='boolean',
+  fx:v=>['none','pulse','bounce','twinkle'].includes(v),
+  mirror:v=>typeof v==='boolean', paging:v=>typeof v==='boolean',
+  glow:v=>GLOWS.includes(v), frame:v=>FRAMES.includes(v),
+  frameColor:v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v),
+  theme:v=>typeof v==='string'&&/^[a-z0-9-]{1,24}$/.test(v)
+};
+// ค่าสีที่โหลดมาเพี้ยน → กลับค่าตั้งต้น (V0.3.3 ไม่รู้จัก bg จึงอาจไม่มี)
+if(!CHECK.color(state.color))state.color=DEF.color;
+if(!CHECK.bg(state.bg))state.bg=DEF.bg;
+if(typeof state.offdots!=='boolean')state.offdots=true;
+if(!CHECK.glow(state.glow))state.glow='normal';
+if(!CHECK.frame(state.frame))state.frame='none';
+if(!CHECK.frameColor(state.frameColor))state.frameColor='#ffffff';
+if(!(state.theme===''||CHECK.theme(state.theme)))state.theme='';
+// รับอะไรก็ได้ คืนป้ายที่ถูกต้อง หรือ null ถ้าใช้ไม่ได้ (ค่าที่เพี้ยนถูกตัดทิ้งทีละช่อง ไม่ทิ้งทั้งป้าย)
+/* ส่วนส่งผ่าน (V0.4.0): ช่องจากเวอร์ชันอนาคตที่เราไม่รู้จัก เก็บแยกไว้ใน _x กันข้อมูลหาย
+   ไม่ใช้วาด ไม่เข้า state ไม่ขึ้นหน้าจอ ตอนเขียนลงเครื่องคืนตำแหน่งเดิม (ระดับเดียวกับช่องอื่น)
+   กันข้อมูลหายได้ แต่ไม่ได้ทำให้ V0.4 แสดงหน้าตาของเวอร์ชันใหม่ได้ */
+const EXTRA_RE=/^[a-z][a-zA-Z0-9]{0,23}$/,EXTRA_MAX=8;
+const okExtra=v=>typeof v==='boolean'||(typeof v==='number'&&Number.isFinite(v))||(typeof v==='string'&&v.length<=64);
+function cleanSign(x){
+  if(typeof x==='string')x={message:x};
+  if(!x||typeof x!=='object'||Array.isArray(x)||!CHECK.message(x.message))return null;
+  const o={};SIGN_KEYS.forEach(k=>{if(k in x&&CHECK[k](x[k]))o[k]=(k==='speed'||k==='size')?String(x[k]):x[k]});
+  META_KEYS.forEach(k=>{if(k in x&&CHECK[k](x[k]))o[k]=x[k]});
+  const src=(x._x&&typeof x._x==='object'&&!Array.isArray(x._x))?x._x:x,ex={};let n=0;
+  Object.keys(src).forEach(k=>{if(n>=EXTRA_MAX||KNOWN.includes(k)||!EXTRA_RE.test(k)||!okExtra(src[k]))return;ex[k]=src[k];n++});
+  if(n)o._x=ex;
+  return o;
+}
+const toStore=sg=>{const o={...(sg._x||{})};KNOWN.forEach(k=>{if(k in sg)o[k]=sg[k]});return o};
+const extraKey=sg=>JSON.stringify(sg._x||{});
+const signOf=st=>{const o={};SIGN_KEYS.forEach(k=>o[k]=st[k]);return o};
+const sameSign=(a,b)=>SIGN_KEYS.every(k=>a[k]===b[k]);
+let imported=[];
+/* ---------- V0.5.1: ป้ายที่ข้อมูลหน้าตาไม่ครบ (ไม่มี color) ----------
+   ส่วนใหญ่คือรายการนำเข้าจาก V0.3.3 ที่เก็บแค่ข้อความ (หรือป้ายที่ข้อมูลเสียจนสีหาย)
+   เดิม: เปิดแล้วใช้หน้าตาของป้ายก่อนหน้า → สีเปลี่ยนตามป้ายข้างเคียง
+   ใหม่: เติมเฉพาะช่องที่ขาด จาก "ค่าต้นแบบ" ที่จับไว้ครั้งแรกที่เปิดเวอร์ชันนี้ แล้วบันทึกกลับครั้งเดียว
+   ค่าต้นแบบ = ค่าตั้ง (led2-settings) ตอนเปิดครั้งแรก — สำหรับผู้ใช้ที่อัปเดตจาก V0.3.3 = หน้าตาที่เคยเห็นใน V0.3.3
+   เก็บแยกที่ 'led3-legacy-base' (เวอร์ชันเก่าไม่แตะ) ไม่ใช้ state ที่ถูกป้ายอื่นเปลี่ยนภายหลัง */
+const LEGACY_BASE_KEY='led3-legacy-base',LEGACY_BACKUP='led3-saved-backup-legacy-';
+const FILL_KEYS=SIGN_KEYS.filter(k=>k!=='message');
+function legacyBase(){
+  let b=null;try{b=JSON.parse(localStorage.getItem(LEGACY_BASE_KEY)||'null')}catch(e){}
+  if(b&&typeof b==='object'&&!Array.isArray(b)){
+    const c=cleanSign({...b,message:'x'});
+    if(c&&FILL_KEYS.every(k=>k in c)){const o={};FILL_KEYS.forEach(k=>o[k]=c[k]);return o}
+  }
+  // ยังไม่มี (เปิดครั้งแรก) หรือเสีย: จับจากค่าตั้งตอนนี้ — loadSaved ทำงานก่อนเปิดป้ายใด ๆ เสมอ
+  const c=cleanSign({...state,message:'x'})||{},o={};
+  FILL_KEYS.forEach(k=>{o[k]=(k in c)?c[k]:DEF[k]});
+  try{localStorage.setItem(LEGACY_BASE_KEY,JSON.stringify(o))}catch(e){}
+  return o;
+}
+// เติมเฉพาะช่องที่ขาด ช่องที่มีอยู่แล้วชนะเสมอ / ป้ายที่มี color = ไม่แตะเลย
+const fillLegacy=(x,base)=>('color' in x)?x:{...base,...x};
+function loadSaved(){
+  let store=null;
+  const raw=localStorage.getItem('led3-saved');
+  try{store=JSON.parse(raw||'null')}catch(e){
+    // ข้อมูลเสีย: เก็บสำเนาไว้ก่อน ไม่ทับทิ้งเฉย ๆ
+    try{localStorage.setItem('led3-saved-broken-'+Date.now(),raw)}catch(e2){}
+  }
+  const items=(store&&Array.isArray(store.items))?store.items:[];
+  imported=(store&&Array.isArray(store.imported))?store.imported.filter(x=>typeof x==='string'):[];
+  // ป้ายเต็มชุดจาก V0.3.7 ไม่มีช่อง bg แต่ตอนนั้นพื้นหลังดำเสมอ จึงเติมดำให้ / รายการข้อความล้วนปล่อยไว้
+  saved=items.map(cleanSign).filter(Boolean).map(x=>('color' in x&&!('bg' in x))?{...x,bg:'#000000'}:x)
+    .map(x=>('color' in x&&!('offdots' in x))?{...x,offdots:true}:x) // ป้ายเต็มชุดก่อน V0.3.10 แสดงเม็ดไฟที่ดับเสมอ
+    // ป้ายเต็มชุดก่อน V0.4.0: แสงแบบเดิม ไม่มีกรอบ (ค่าตายตัว ไม่รับจากป้ายที่เปิดก่อนหน้า)
+    .map(x=>'color' in x?{glow:'normal',frame:'none',frameColor:'#ffffff',...x}:x);
+  const base=legacyBase(); // จับค่าต้นแบบครั้งแรกเสมอ (ก่อนเปิดป้ายใด ๆ)
+  // ป้ายหน้าตาไม่ครบที่อยู่ใน led3-saved แล้ว: สำรองก่อน — สำรองไม่สำเร็จ = ไม่แปลง (ทำงานแบบ V0.5.0 แล้วลองใหม่ครั้งหน้า)
+  let converted=false;
+  if(raw&&saved.some(x=>!('color' in x))){
+    let backed=false;const bk=LEGACY_BACKUP+Date.now();
+    try{localStorage.setItem(bk,raw);backed=localStorage.getItem(bk)===raw}catch(e){backed=false}
+    if(backed){
+      // เก็บสำเนาล่าสุดชุดเดียว (ถ้าครั้งก่อนบันทึกผลแปลงไม่สำเร็จ จะมีสำเนาเก่าค้าง)
+      try{Object.keys(localStorage).forEach(k=>{if(k.startsWith(LEGACY_BACKUP)&&k!==bk)localStorage.removeItem(k)})}catch(e){}
+      saved=saved.map(x=>fillLegacy(x,base));converted=true;
+    }else{try{console.warn('My LED Sign: backup failed — legacy signs not converted this time')}catch(e){}}
+  }
+  // นำรายการเก่าจาก V0.3.3 เข้ามา (เฉพาะที่ยังไม่เคยนำเข้า ถ้าผู้ใช้ลบไปแล้วจะไม่กลับมาอีก)
+  let old=[];try{old=JSON.parse(localStorage.getItem('led2-saved')||'[]')}catch(e){}
+  if(!Array.isArray(old))old=[];
+  let added=false;
+  saved=saved.slice(0,30);
+  // ถ้าเต็ม 30 แล้ว รายการเก่าที่เหลือยังไม่นับว่านำเข้า (ยังอยู่ในที่เก็บเก่า ลบบางอันแล้วจะตามเข้ามาเอง)
+  old.forEach(x=>{if(typeof x!=='string'||imported.includes(x))return;const c=cleanSign(x);
+    if(!c){imported.push(x);return}
+    if(saved.length>=30)return;
+    imported.push(x);saved.push(fillLegacy(c,base));added=true}); // V0.5.1: นำเข้าแล้วมีหน้าตาครบทันที
+  if(added||converted||!store)persistSaved();
+}
+const persistSaved=()=>{try{localStorage.setItem('led3-saved',JSON.stringify({v:1,items:saved.map(toStore),imported}))}catch(e){}};
+try{loadSaved()}catch(e){saved=[]}
 const t=k=>(T[state.lang]&&T[state.lang][k])||T.en[k];
-const COLORS=['#ffdf38','#ff4242','#3dff79','#47cfff','#ffffff','rainbow'];
+const COLORS=[['#ffdf38','yellow'],['#ff9a1f','orange'],['#ff4242','red'],['#ff5fa8','pink'],['#c45cff','purple'],['#3dff79','green'],['#b6ff3d','lime'],['#47cfff','sky'],['#3d6bff','blue'],['#ffffff','white'],['rainbow','rainbow']];
+const BGS=[['#000000','black'],['#ffffff','white'],['#e02020','red'],['#ff7a00','orange'],['#ffd60a','yellow'],['#16a34a','green'],['#0ea5e9','sky'],['#1d4ed8','blue'],['#7c3aed','purple'],['#ec4899','pink'],['#0a1a3d','navy'],['#4b5563','gray']];
+const HEX=/^#[0-9a-f]{6}$/i;
+// จานสี 72 ช่อง: แถวบนเทาดำ-ขาว 12 ระดับ แล้ว 12 เฉดสี × 5 ระดับความสว่าง (เข้ม → อ่อน)
+const hslHex=(h,sat,l)=>{sat/=100;l/=100;const k=n=>(n+h/30)%12,a=sat*Math.min(l,1-l),
+  f=n=>Math.round(255*(l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1))));return '#'+[f(0),f(8),f(4)].map(x=>x.toString(16).padStart(2,'0')).join('')};
+const PALETTE=[];
+for(let i=0;i<12;i++)PALETTE.push(hslHex(0,0,Math.round(i*100/11)));
+[22,35,50,65,80].forEach(l=>{for(let h=0;h<360;h+=30)PALETTE.push(hslHex(h,100,l))});
 
 /* ---------- เมนู ---------- */
 const langSel=$('lang');
 LANGS.forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;langSel.appendChild(o)});
 langSel.onchange=()=>{state.lang=langSel.value;persist();applyLang()};
-const sw=$('swatches');
-COLORS.forEach(v=>{const b=document.createElement('button');b.type='button';b.className='swatch';b.dataset.color=v;
-  b.style.background=v==='rainbow'?'conic-gradient(red,orange,yellow,lime,cyan,blue,magenta,red)':v;
-  b.onclick=()=>{state.color=v;changed()};sw.appendChild(b)});
+const sw=$('swatches'),bsw=$('bgswatches');
+// สร้างแถวปุ่มสี + ปุ่ม "เลือกสีเอง" ท้ายแถว (ใช้ตัวเลือกสีของเครื่อง)
+function buildSwatches(box,list,key){
+  list.forEach(([v,name])=>{const b=document.createElement('button');b.type='button';b.className='swatch';b.dataset.color=v;b.dataset.name=name;
+    b.style.background=v==='rainbow'?'conic-gradient(red,orange,yellow,lime,cyan,blue,magenta,red)':v;
+    b.onclick=()=>{state[key]=v;changed()};box.appendChild(b)});
+  // ปุ่ม ＋ เปิด/ปิดจานสีของแอปเอง (ไม่ใช้ตัวเลือกสีของเครื่อง เพราะบางเครื่องเก็บสีเพิ่มได้แค่ไม่กี่ช่อง)
+  const plus=document.createElement('button');plus.type='button';plus.className='swatch custom';plus.dataset.name='custom';plus.textContent='＋';
+  box.appendChild(plus);
+  const pal=document.createElement('div');pal.className='palette';
+  PALETTE.forEach(v=>{const c=document.createElement('button');c.type='button';c.dataset.color=v;c.style.background=v;c.setAttribute('aria-label',v);
+    c.onclick=()=>{state[key]=v;addRecent(key,v);changed()};pal.appendChild(c)});
+  box.after(pal);
+  plus.onclick=()=>pal.classList.toggle('open');
+}
+buildSwatches(sw,COLORS,'color');buildSwatches(bsw,BGS,'bg');
+// สีกรอบ (V0.4.1): ปุ่มสำเร็จรูป + จานสีเดิม (ไม่มีสีล่าสุด)
+const fsw=$('fswatches');
+const FCOLORS=[['#ffffff','white'],['#ffdf38','yellow'],['#ff9a1f','orange'],['#ff4242','red'],['#ff5fa8','pink'],['#c45cff','purple'],['#3dff79','green'],['#47cfff','sky'],['#000000','black']];
+buildSwatches(fsw,FCOLORS,'frameColor');
+/* สีล่าสุด: จำสีที่เลือกจากจานสี 5 สี แยกของตัวอักษรกับพื้นหลัง วางไว้หน้าปุ่ม ＋ */
+let recent={color:[],bg:[]};
+try{const r=JSON.parse(localStorage.getItem('led3-recent')||'{}');['color','bg'].forEach(k=>{if(Array.isArray(r[k]))recent[k]=r[k].filter(v=>HEX.test(v)).slice(0,5)})}catch(e){}
+function addRecent(key,v){
+  if(key!=='color'&&key!=='bg')return; // สีล่าสุดมีเฉพาะตัวอักษรกับพื้น
+  const box=key==='color'?sw:bsw;
+  if([...box.querySelectorAll('button:not(.recent)')].some(b=>b.dataset.color===v))return; // สีที่มีปุ่มอยู่แล้วไม่ต้องจำ
+  recent[key]=[v,...recent[key].filter(x=>x!==v)].slice(0,5);
+  try{localStorage.setItem('led3-recent',JSON.stringify(recent))}catch(e){}
+  renderRecent(key);
+}
+function renderRecent(key){
+  const box=key==='color'?sw:bsw,plus=box.querySelector('.custom');
+  box.querySelectorAll('.recent,.reclab').forEach(b=>b.remove());
+  if(recent[key].length){const l=document.createElement('span');l.className='reclab';l.dataset.i='recent';l.textContent=t('recent');box.insertBefore(l,plus)}
+  recent[key].forEach(v=>{const b=document.createElement('button');b.type='button';b.className='swatch recent';b.dataset.color=v;
+    b.style.background=v;b.setAttribute('aria-label',v);b.onclick=()=>{state[key]=v;changed()};box.insertBefore(b,plus)});
+}
+renderRecent('color');renderRecent('bg');
+/* ---------- ธีม (V0.4.0, กรอบเพิ่มใน V0.4.1) ----------
+   ธีม = ชุดค่าตั้งต้น กดแล้วคัดลอกลงป้าย (ไม่ลิงก์สด) ป้ายที่บันทึกเก็บค่าจริงทุกช่อง + ชื่อธีมเป็นป้ายกำกับ
+   ธีมแตะเฉพาะ THEME_KEYS ต้องระบุครบ 8 ช่องทุกธีม / ป้ายที่บันทึกตอน V0.4.0 (ไม่มีกรอบ) ยังไม่มีกรอบ เพราะเก็บค่าจริง */
+const THEME_KEYS=['color','bg','style','dot','offdots','glow','frame','frameColor'];
+const TH=(id,color,bg,style,dot,offdots,glow,frame='none',frameColor='#ffffff')=>({id,v:{color,bg,style,dot,offdots,glow,frame,frameColor}});
+const THEMES=[
+  TH('classic','#ffdf38','#000000','dots','medium',true,'normal'),
+  TH('neon','#ff5fa8','#12002a','smooth','medium',false,'strong','neon','#47cfff'),
+  TH('minimal','#10162a','#ffffff','smooth','medium',false,'none'),
+  TH('party','rainbow','#000000','dots','fine',false,'normal','bulbs','#ffffff'),
+  TH('alert','#ffffff','#e02020','dots','medium',false,'none','line','#ffffff'),
+  TH('pickup','#000000','#ffd60a','smooth','medium',false,'none','line','#000000'),
+  TH('sports','#ffffff','#1d4ed8','dots','large',true,'normal','bulbs','#ffdf38'),
+  TH('romance','#ff8fc4','#2a0a1f','smooth','medium',false,'soft','neon','#ff5fa8'),
+  TH('birthday','#ffdf38','#5b21b6','dots','medium',false,'soft','neon','#ffdf38'),
+  TH('retro','#ff9a1f','#140a00','dots','fine',true,'soft')
+];
+// ใช้เฉพาะแสดง ✎ บนการ์ด — ห้ามใช้กับการบันทึก/กันป้ายซ้ำ/จับคู่ป้าย (หน้าตาเท่ากัน ≠ ข้อมูลเท่ากัน)
+function looksLikeTheme(th){const sm=th.v.style==='smooth'&&state.style==='smooth',n=v=>v==='normal'?'none':v;
+  return THEME_KEYS.every(k=>{if(sm&&(k==='dot'||k==='offdots'))return true;if(sm&&k==='glow')return n(state.glow)===n(th.v.glow);return state[k]===th.v[k]})}
+function applyTheme(th){THEME_KEYS.forEach(k=>{state[k]=th.v[k]});state.theme=th.id;changed(true)}
+const themeBox=$('themes');
+THEMES.forEach(th=>{const b=document.createElement('button');b.type='button';b.className='tcard';b.dataset.id=th.id;
+  const face=document.createElement('span');face.className='tface'+(th.v.style==='dots'?' tdots':'');face.style.background=th.v.bg;
+  const fc=th.v.frameColor;
+  if(th.v.frame==='line')face.style.border=`3px solid ${fc}`;
+  else if(th.v.frame==='neon'){face.style.border=`2px solid ${fc}`;face.style.boxShadow=`0 0 6px ${fc},inset 0 0 5px ${fc}`}
+  else if(th.v.frame==='bulbs')face.style.border=`3px dotted ${fc}`;
+  const tx=document.createElement('span');tx.className='ttxt';tx.textContent='กขค Aa';
+  if(th.v.color==='rainbow')tx.classList.add('rb');else{tx.style.color=th.v.color;
+    if(th.v.glow==='soft'||th.v.glow==='strong')tx.style.textShadow=th.v.glow==='strong'?`0 0 4px ${th.v.color},0 0 10px ${th.v.color}`:`0 0 5px ${th.v.color}`}
+  const ed=document.createElement('span');ed.className='tedit';ed.textContent='✎';
+  face.append(tx,ed);const nm=document.createElement('span');nm.className='tname';nm.dataset.i='th_'+th.id;
+  b.append(face,nm);b.onclick=()=>applyTheme(th);themeBox.appendChild(b)});
+/* เทียบความต่างของสี (สูตร contrast ratio ของ WCAG) */
+function relLum(hex){return hexRGB(hex).map(c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)}).reduce((a,c,i)=>a+c*[.2126,.7152,.0722][i],0)}
+function contrast(a,b){const x=relLum(a),y=relLum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+$('cfix').onclick=()=>{let best=null,bv=0;COLORS.forEach(([v])=>{if(v==='rainbow')return;const c=contrast(v,state.bg);if(c>bv){bv=c;best=v}});
+  if(best){state.color=best;changed()}};
+$('swap').onclick=()=>{if(state.color==='rainbow')return;const c=state.color;state.color=state.bg;state.bg=c;changed()};
+$('offdots').addEventListener('input',e=>{state.offdots=e.target.checked;changed()});
 const emoBox=$('emojis');
 EMOJIS.forEach(em=>{const b=document.createElement('button');b.type='button';b.textContent=em;b.setAttribute('aria-label',em);b.onclick=()=>{state.message=em;state.mode='still';$('message').value=em;changed(true)};emoBox.appendChild(b)});
 const testBox=$('tests');
@@ -215,8 +502,11 @@ function applyLang(){
   document.documentElement.lang=state.lang;
   document.querySelectorAll('[data-i]').forEach(el=>{el.textContent=t(el.dataset.i)});
   $('message').placeholder=t('ph');
-  const names=t('colors');
-  sw.querySelectorAll('button').forEach((b,i)=>{b.title=names[i];b.setAttribute('aria-label',names[i])});
+  const cn=t('cn')||{};
+  [sw,bsw,fsw].forEach(box=>box.querySelectorAll('.swatch').forEach(b=>{const n=cn[b.dataset.name]||b.dataset.name;b.title=n;b.setAttribute('aria-label',n)}));
+  // V0.5.0: ปุ่มไอคอน ⇄ และ 📋 ใช้ชื่อเต็มเป็น title/aria-label
+  $('swap').title=t('swap');$('swap').setAttribute('aria-label',t('swap'));
+  $('jump').title=t('saved');$('jump').setAttribute('aria-label',t('saved'));
   langSel.value=state.lang;renderSaved();refreshLabels();
 }
 function refreshLabels(){
@@ -229,18 +519,35 @@ function refreshLabels(){
 function refresh(){
   const m=$('message');if(document.activeElement!==m)m.value=state.message;
   $('speed').value=state.speed;$('size').value=state.size;$('mirror').checked=!!state.mirror;$('paging').checked=!!state.paging;
-  ['style','dot','mode','fx'].forEach(id=>$(id).querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===state[id])));
-  sw.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.color===state.color));
+  ['style','dot','mode','fx','frame'].forEach(id=>$(id).querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===state[id])));
+  $('frameColorBox').hidden=state.frame==='none';
+  $('dotBox').hidden=state.style==='smooth'; // V0.5.0: ซ่อนอย่างเดียว ค่า state.dot ไม่เปลี่ยน
+  // แสงเรือง: ตัวเรียบ normal = ไม่มีแสง → ซ่อนปุ่ม "ปกติ" และให้ปุ่ม "ไม่มี" สว่างแทน
+  const sm=state.style==='smooth',gb=$('glow');gb.querySelector('[data-v="normal"]').hidden=sm;
+  gb.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===state.glow||(sm&&b.dataset.v==='none'&&state.glow==='normal')));
+  gb.classList.toggle('off',isLight(state.bg));
+  themeBox.querySelectorAll('.tcard').forEach(b=>{const th=THEMES.find(x=>x.id===b.dataset.id),on=state.theme===th.id;
+    b.classList.toggle('active',on);b.classList.toggle('edited',on&&!looksLikeTheme(th))});
+  [[sw,'color'],[bsw,'bg'],[fsw,'frameColor']].forEach(([box,key])=>{let hit=false;
+    box.querySelectorAll('button').forEach(b=>{const on=b.dataset.color===state[key];b.classList.toggle('active',on);if(on)hit=true});
+    const c=box.querySelector('.custom');
+    // สีจากจานสีไม่ตรงกับปุ่มไหน: ปุ่ม ＋ แสดงสีนั้นและขึ้นกรอบว่าเลือกอยู่
+    c.classList.toggle('active',!hit);c.style.background=hit?'':state[key];
+    box.nextElementSibling.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.color===state[key]))});
+  $('offdots').checked=state.offdots!==false;
+  $('swap').disabled=state.color==='rainbow';
+  $('cwarn').classList.toggle('on',state.color!=='rainbow'&&contrast(state.color,state.bg)<2);
   refreshLabels();
 }
 let resetOffset=true,page=0,pageClock=0;
-function changed(restart){persist();refresh();if(restart){resetOffset=true;page=0;pageClock=0}}
+function changed(restart){lastOpened=-1; // ผู้ใช้แก้ป้าย = ตำแหน่งที่จำไว้ใช้ไม่ได้แล้ว (openSaved ตั้งค่าใหม่หลังบรรทัดนี้)
+  persist();refresh();if(restart){resetOffset=true;page=0;pageClock=0}}
 $('message').addEventListener('input',e=>{state.message=e.target.value;changed(true)});
 $('speed').addEventListener('input',e=>{state.speed=e.target.value;changed()});
 $('size').addEventListener('input',e=>{state.size=e.target.value;changed(true)});
 $('mirror').addEventListener('input',e=>{state.mirror=e.target.checked;changed()});
 $('paging').addEventListener('input',e=>{state.paging=e.target.checked;changed(true)});
-['style','dot','mode','fx'].forEach(id=>$(id).addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v){state[id]=v;changed(true)}}));
+['style','dot','mode','fx','glow','frame'].forEach(id=>$(id).addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v){state[id]=v;changed(true)}}));
 
 /* ---------- จัดข้อความ: ตัดคำ ไม่แยกสระวรรณยุกต์ออกจากพยัญชนะ ---------- */
 const FONT='system-ui,"Noto Sans Thai","Noto Sans Lao","Noto Sans Khmer","Noto Sans Myanmar","Noto Sans CJK JP","Noto Sans Arabic","Noto Sans",sans-serif';
@@ -347,6 +654,9 @@ function layout(W,H){
 
 /* ---------- วาดเม็ดไฟ ---------- */
 const MAXCHUNK=4096;
+// V0.4.1: ป้ายที่มีกรอบใช้ชิ้นภาพไม่เกิน 4000 — ชิ้นกว้าง 4096 พอดี (เม็ดไฟขนาด 8/16/32) วาดช้าลงมากตอนทดสอบ
+// ป้ายไม่มีกรอบคง 4096 ตามเดิม เพราะรอยต่อชิ้นภาพมีผลกับแสงเรืองของเม็ดไฟ (ต้องเหมือน V0.3.10 ทุกพิกเซล)
+const MAXCHUNK_FRAMED=4000;
 const srcC=document.createElement('canvas'),srcX=srcC.getContext('2d',{willReadFrequently:true});
 const miniC=document.createElement('canvas'),miniX=miniC.getContext('2d',{willReadFrequently:true});
 let rasterCache=new Map(),rasterBase='',sprites=new Map(),spriteStep=0,unlitPattern=null,patternStep=0;
@@ -354,25 +664,36 @@ function hueRGB(h){h/=60;const f=n=>{const k=(n+h)%6;return Math.round(255*(1-Ma
 function hexRGB(hex){const n=parseInt(hex.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255]}
 function sprite(rgb,step){
   if(spriteStep!==step){sprites.clear();spriteStep=step}
-  const key=rgb.join(',');let s=sprites.get(key);if(s)return s;
+  const light=isLight(state.bg),key=rgb.join(',')+(light?'L':'')+'|'+state.glow;let s=sprites.get(key);if(s)return s;
   const size=Math.ceil(step*2.6),c=document.createElement('canvas');c.width=c.height=size;
   const x=c.getContext('2d'),m=size/2,[r,g,b]=rgb;
-  const grd=x.createRadialGradient(m,m,0,m,m,m);
-  grd.addColorStop(0,`rgba(${r},${g},${b},.5)`);grd.addColorStop(.42,`rgba(${r},${g},${b},.16)`);grd.addColorStop(1,`rgba(${r},${g},${b},0)`);
-  x.fillStyle=grd;x.fillRect(0,0,size,size);
-  x.beginPath();x.arc(m,m,step*.38,0,Math.PI*2);x.fillStyle=`rgb(${r},${g},${b})`;x.fill();
+  // ระดับแสงเรือง: normal = ค่าเดิม V0.3.10 ทุกตัวเลข / none = ไม่มีแสง
+  const G={soft:[.25,.08],normal:[.5,.16],strong:[.8,.3]}[state.glow];
+  // พื้นสว่าง: ไม่ใส่แสงเรือง (บนพื้นขาวแสงเรืองทำให้สีซีด) และเม็ดใหญ่ขึ้นนิดให้สีเข้ม
+  if(!light&&G){const grd=x.createRadialGradient(m,m,0,m,m,m);
+    grd.addColorStop(0,`rgba(${r},${g},${b},${G[0]})`);grd.addColorStop(.42,`rgba(${r},${g},${b},${G[1]})`);grd.addColorStop(1,`rgba(${r},${g},${b},0)`);
+    x.fillStyle=grd;x.fillRect(0,0,size,size)}
+  x.beginPath();x.arc(m,m,step*(light?.45:.38),0,Math.PI*2);x.fillStyle=`rgb(${r},${g},${b})`;x.fill();
   x.beginPath();x.arc(m-step*.1,m-step*.1,step*.14,0,Math.PI*2);x.fillStyle='rgba(255,255,255,.35)';x.fill();
   sprites.set(key,c);return c;
 }
+const isLight=hex=>{const[r,g,b]=hexRGB(hex);return(.299*r+.587*g+.114*b)>140};
+// ทุกค่าที่มีผลกับภาพป้าย (นอกจาก layout) — เพิ่มช่องใหม่ที่มีผลกับภาพ ต้องเพิ่มที่นี่ที่เดียว
+const visKey=()=>[state.color,isLight(state.bg)?'L':'D',state.glow,state.frame==='none'?'':'F'].join('|');
+// เม็ดไฟที่ดับ: อ่อนกว่าพื้นหลังเล็กน้อยถ้าพื้นมืด, เข้มกว่าเล็กน้อยถ้าพื้นสว่าง
+function unlitColor(bg){const light=isLight(bg),t=light?.12:.09,to=light?0:255;
+  return 'rgb('+hexRGB(bg).map(c=>Math.round(c+(to-c)*t)).join(',')+')'}
+let patternBg='';
 function unlit(ctx,step){
-  if(unlitPattern&&patternStep===step)return unlitPattern;
+  if(unlitPattern&&patternStep===step&&patternBg===state.bg)return unlitPattern;
   const c=document.createElement('canvas');c.width=c.height=step;const x=c.getContext('2d');
-  x.beginPath();x.arc(step/2,step/2,step*.38,0,Math.PI*2);x.fillStyle='#181818';x.fill();
-  unlitPattern=ctx.createPattern(c,'repeat');patternStep=step;return unlitPattern;
+  x.beginPath();x.arc(step/2,step/2,step*.38,0,Math.PI*2);x.fillStyle=unlitColor(state.bg);x.fill();
+  unlitPattern=ctx.createPattern(c,'repeat');patternStep=step;patternBg=state.bg;return unlitPattern;
 }
 function raster(W,H,scale=1){
   const lo=layout(W,H),pg=page%lo.pages.length;
-  const key=lo.key+'|'+state.color+'|'+pg;
+  // กุญแจแคชต้องรวมทุกค่าที่มีผลกับภาพ (V0.4.0 แก้บั๊ก: เดิมไม่มีพื้นมืด/สว่าง ภาพเม็ดไฟค้าง)
+  const key=lo.key+'|'+visKey()+'|'+pg;
   if(key!==rasterBase){rasterCache.clear();rasterBase=key}
   const sk=scale.toFixed(3);if(rasterCache.has(sk))return rasterCache.get(sk);
   const {dots,step,blockW,blockH}=lo,fs=(lo.pageFs?lo.pageFs[pg]:lo.fs)*scale,st=stack(lo.pages[pg],fs);
@@ -382,13 +703,20 @@ function raster(W,H,scale=1){
     c.font=`700 ${fs}px ${FONT}`;c.textBaseline='alphabetic';c.textAlign='left';c.fillStyle=fill;
     let y=top;st.L.forEach(l=>{y+=l.a;c.direction=l.dir;if(l.s.trim())c.fillText(l.s,(blockW-l.w)/2-x0,y-y0);y+=l.d+st.gap});
   }
-  const CS=Math.max(step,Math.floor(MAXCHUNK/step)*step),chunks=[];
+  const CS=Math.max(step,Math.floor((state.frame==='none'?MAXCHUNK:MAXCHUNK_FRAMED)/step)*step),chunks=[];
   for(let y0=0;y0<blockH;y0+=CS)for(let x0=0;x0<blockW;x0+=CS){
     const cw=Math.min(CS,blockW-x0),chh=Math.min(CS,blockH-y0);
     const out=document.createElement('canvas');out.width=cw;out.height=chh;const oc=out.getContext('2d');
     if(!dots){
       let fill=state.color;
       if(rainbow){fill=oc.createLinearGradient(-x0,0,blockW-x0,0);['#ff3c5f','#ffc13a','#eaff4d','#46ef84','#36caff','#a05cff'].forEach((c,i)=>fill.addColorStop(i/5,c))}
+      // แสงเรืองตัวเรียบ (V0.4.0): เฉพาะ soft/strong บนพื้นมืด / normal = ไม่มีแสงเหมือน V0.3.10
+      // วาดครั้งเดียวตอนสร้างภาพป้าย (เก็บในแคช) ไม่ใช่ทุกเฟรม
+      if(!isLight(state.bg)&&(state.glow==='soft'||state.glow==='strong')){
+        oc.shadowColor=rainbow?'rgba(255,255,255,.55)':state.color;oc.shadowBlur=fs*(state.glow==='strong'?.22:.1);
+        drawText(oc,x0,y0,fill);if(state.glow==='strong')drawText(oc,x0,y0,fill);
+        oc.shadowBlur=0;oc.shadowColor='transparent';
+      }
       drawText(oc,x0,y0,fill);
     }else{
       const cols=cw/step+2,rows=chh/step+2;
@@ -417,7 +745,7 @@ function raster(W,H,scale=1){
 }
 
 /* ---------- เล่นภาพ ---------- */
-let offset=0,last=0,rotated=false,lastPages=1,fxTime=0;
+let offset=0,last=0,rotated=false,lastPages=1,fxTime=0,lastInset=0;
 // ความเร็วเอฟเฟกต์: ใช้ตัวปรับความเร็วเดิม 42% = ปกติ, ช้าสุด 0.4 เท่า, เร็วสุด 2.5 เท่า
 const fxRate=()=>{const s=Number(state.speed);return s<=42?.4+.6*(s-1)/41:1+1.5*(s-42)/58};
 function paint(canvas,dt){
@@ -428,9 +756,14 @@ function paint(canvas,dt){
   const vertMode=state.mode==='up'||state.mode==='down';
   const rot=canvas.id==='screen'&&CH>CW*1.05&&!vertMode;
   if(rot!==rotated){rotated=rot;resetOffset=true}
-  const W=rot?CH:CW,H=rot?CW:CH;
+  const FW=rot?CH:CW,FH=rot?CW:CH;
+  // กรอบ (V0.4.1): หดพื้นที่ข้อความด้านละ I (กรอบ 2.5% + ช่องว่าง 1.5% ของด้านสั้น — ค่าทดลอง)
+  // ไม่มีกรอบ I=0 = ทุกอย่างเหมือน V0.4.0 ทุกพิกเซล
+  const I=state.frame==='none'?0:Math.round(Math.min(FW,FH)*.04);
+  if(I!==lastInset){lastInset=I;resetOffset=true}
+  const W=FW-2*I,H=FH-2*I;
   const ctx=canvas.getContext('2d');
-  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,CW,CH);
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=state.bg;ctx.fillRect(0,0,CW,CH);
   const lo=layout(W,H);
   if(state.mode==='still'&&lo.pages.length>1){pageClock+=dt;if(pageClock>=pageMs(lo.pages[page%lo.pages.length])){pageClock=0;page=(page+1)%lo.pages.length}}
   lastPages=state.mode==='still'?lo.pages.length:1;
@@ -464,22 +797,67 @@ function paint(canvas,dt){
     const x=snap((W-art.artW)/2),y=snap((H-art.artH)/2+bob);pos.push([x,y]);sx=x;sy=y;resetOffset=false;
   }
   if(rot)ctx.setTransform(0,1,-1,0,CW,0);
-  if(state.mirror)ctx.transform(-1,0,0,1,W,0);
-  if(art.dots){
+  if(state.mirror)ctx.transform(-1,0,0,1,FW,0);
+  if(art.dots&&state.offdots!==false){ // เม็ดดับเต็มจอ (รวมใต้กรอบ) แนวตรงกับตัวหนังสือ
     const p=unlit(ctx,step),m=q=>((q%step)+step)%step;
-    p.setTransform(new DOMMatrix().translateSelf(m(sx),m(sy)));ctx.fillStyle=p;ctx.fillRect(0,0,W,H);
+    p.setTransform(new DOMMatrix().translateSelf(m(sx+I),m(sy+I)));ctx.fillStyle=p;ctx.fillRect(0,0,FW,FH);
   }
+  ctx.save();
+  if(I){ctx.beginPath();ctx.rect(I,I,W,H);ctx.clip();ctx.translate(I,I)} // ข้อความวิ่งอยู่ในกรอบ ไม่ทับกรอบ
   ctx.globalAlpha=alpha;
   pos.forEach(([x,y])=>art.chunks.forEach(ch=>{const dx=x+ch.x,dy=y+ch.y;if(dx+ch.w>=0&&dx<=W&&dy+ch.h>=0&&dy<=H)ctx.drawImage(ch.c,dx,dy)}));
   ctx.globalAlpha=1;
   if(art.mode==='still'&&art.pages>1){ // จุดบอกหน้า
     const r=Math.max(3,H*.012),gapP=r*3.4,start=W/2-(art.pages-1)*gapP/2,y=H-r*3;
-    for(let i=0;i<art.pages;i++){ctx.beginPath();ctx.arc(start+i*gapP,y,r,0,Math.PI*2);ctx.fillStyle=i===page%art.pages?'#ffffff':'#4a4a4a';ctx.fill()}
+    for(let i=0;i<art.pages;i++){ctx.beginPath();ctx.arc(start+i*gapP,y,r,0,Math.PI*2);const lt=isLight(state.bg);ctx.fillStyle=i===page%art.pages?(lt?'#000000':'#ffffff'):(lt?'#9a9a9a':'#4a4a4a');ctx.fill()}
+  }
+  ctx.restore();
+  if(I){ // กรอบอยู่บนสุด ตามขอบจอจริง (ไม่หมุน ไม่กลับด้าน) — แปะแค่ 4 แถบขอบ ไม่แปะทั้งจอ (ประหยัดงานต่อเฟรม)
+    ctx.setTransform(1,0,0,1,0,0);const fa=frameArt(CW,CH,canvas.id==='screen'?0:Math.round((canvas.id==='minicv'?9:15)*dpr));
+    const B=Math.min(Math.ceil(Math.min(CW,CH)*.07),Math.floor(Math.min(CW,CH)/2)),cp=(x,y,w,h)=>{if(w>0&&h>0)ctx.drawImage(fa,x,y,w,h,x,y,w,h)};
+    cp(0,0,CW,B);cp(0,CH-B,CW,B);cp(0,B,B,CH-2*B);cp(CW-B,B,B,CH-2*B);
   }
 }
+/* ---------- กรอบ (V0.4.1) ----------
+   วาดลง canvas แยกครั้งเดียวต่อ (ขนาด, แบบ, สี, พื้นมืด/สว่าง) แล้วแปะทุกเฟรม — ไม่มี shadowBlur ในลูป
+   พื้นสว่าง: นีออน/หลอดไฟไม่มีแสงเรือง (กฎเดียวกับเม็ดไฟ) */
+const frameCache=new Map();
+function frameArt(CW,CH,R=0){ // R = มุมโค้งของกรอบป้ายตัวอย่าง (เต็มจอ R=0)
+  const light=isLight(state.bg),key=[CW,CH,R,state.frame,state.frameColor,light].join('|');
+  let c=frameCache.get(key);if(c)return c;
+  if(frameCache.size>=4)frameCache.clear();
+  c=document.createElement('canvas');c.width=CW;c.height=CH;const x=c.getContext('2d');
+  const T=Math.max(2,Math.round(Math.min(CW,CH)*.025)),col=state.frameColor,[r,g,b]=hexRGB(col);
+  const box=(inset,lw)=>{x.lineWidth=lw;x.beginPath();const w=CW-2*inset,h=CH-2*inset,rad=Math.max(0,Math.min(Math.max(T*1.2,R-inset),w/2,h/2));
+    if(x.roundRect)x.roundRect(inset,inset,w,h,rad);else x.rect(inset,inset,w,h);x.stroke()};
+  if(state.frame==='line'){x.strokeStyle=col;box(T/2,T)}
+  else if(state.frame==='neon'){
+    x.strokeStyle=col;
+    if(!light){x.shadowColor=col;x.shadowBlur=T*1.6;box(T*.6,T*.45);box(T*.6,T*.45);x.shadowBlur=0;x.shadowColor='transparent';
+      x.strokeStyle=`rgb(${[r,g,b].map(v=>Math.round((v+510)/3)).join(',')})`;box(T*.6,T*.16)}
+    else box(T*.6,T*.45);
+  }else if(state.frame==='bulbs'){
+    const a=T/2,gap=T*1.9,d=T*.9,pts=[];
+    const side=(x0,y0,x1,y1)=>{const n=Math.max(1,Math.round(Math.hypot(x1-x0,y1-y0)/gap));for(let i=0;i<n;i++)pts.push([x0+(x1-x0)*i/n,y0+(y1-y0)*i/n])};
+    side(a,a,CW-a,a);side(CW-a,a,CW-a,CH-a);side(CW-a,CH-a,a,CH-a);side(a,CH-a,a,a);
+    // ป้ายตัวอย่างมุมโค้ง: ข้ามหลอดที่ตกนอกมุม
+    const inCorner=(px,py)=>{if(!R)return false;const cx=px<R?R:px>CW-R?CW-R:null,cy=py<R?R:py>CH-R?CH-R:null;
+      return cx!==null&&cy!==null&&Math.hypot(px-cx,py-cy)>R-d*.6};
+    pts.filter(([px,py])=>!inCorner(px,py)).forEach(([px,py])=>{
+      if(!light){const gr=x.createRadialGradient(px,py,0,px,py,d*1.25);gr.addColorStop(0,`rgba(${r},${g},${b},.45)`);gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+        x.fillStyle=gr;x.fillRect(px-d*1.25,py-d*1.25,d*2.5,d*2.5)}
+      x.beginPath();x.arc(px,py,d/2,0,Math.PI*2);x.fillStyle=col;x.fill();
+      x.beginPath();x.arc(px-d*.15,py-d*.15,d*.16,0,Math.PI*2);x.fillStyle='rgba(255,255,255,.55)';x.fill()});
+  }
+  frameCache.set(key,c);return c;
+}
+// ป้ายย่อลอยด้านบน: ขึ้นเมื่อป้ายตัวอย่างใหญ่เลื่อนพ้นจอ หายเมื่อเลื่อนกลับขึ้นไป
+let miniOn=false;
+try{new IntersectionObserver(es=>{miniOn=!es[0].isIntersecting}).observe(document.querySelector('.preview'))}catch(e){}
 function tick(tm){
   const dt=Math.min(60,tm-(last||tm));last=tm;
-  paint(document.body.classList.contains('show')?$('screen'):$('preview'),dt);
+  const full=document.body.classList.contains('show');$('mini').classList.toggle('on',miniOn&&!full);
+  paint(full?$('screen'):miniOn?$('minicv'):$('preview'),dt);
   requestAnimationFrame(tick);
 }
 
@@ -509,33 +887,111 @@ $('display').addEventListener('click',e=>{
   if((r<.33||r>.67)&&lastPages>1){
     page=r<.33?(page-1+lastPages)%lastPages:(page+1)%lastPages;pageClock=0;
   }else if((r<.33||r>.67)&&saved.length){
-    let i=saved.indexOf(state.message);
+    let i=currentSaved();
     i=r<.33?(i<=0?saved.length-1:i-1):(i+1)%saved.length;
-    state.message=saved[i];changed(true);toast(saved[i]);
+    openSaved(i);toast(saved[i].message);
   }else $('exit').classList.toggle('show');
 });
 
 /* ---------- ข้อความที่บันทึก ---------- */
+// ป้ายที่กำลังแสดงอยู่คือรายการไหน ค้นทีละชั้น:
+// 1) รายการที่มีครบ 10 ช่องและตรงทุกช่อง  2) รายการที่มีไม่ครบ (เช่นรายการเก่า) แต่ช่องที่มีตรงหมด
+// 3) ข้อความตรงอย่างเดียว  ไม่เจอเลย = -1
+// ก่อนค้น: ถ้ายังแสดงป้ายที่เพิ่งเปิดอยู่ (ยังไม่ได้แก้อะไร) ใช้ตำแหน่งนั้นเลย
+// เพราะรายการเก่า LOVE ที่เปิดทับค่าสีฟ้า จะหน้าตาเหมือน LOVE สีฟ้าทุกอย่าง ค้นจากค่าแยกไม่ออก
+const fits=(x,cur)=>SIGN_KEYS.every(k=>!(k in x)||x[k]===cur[k]);
+function currentSaved(){
+  const cur=signOf(state);
+  if(saved[lastOpened]&&fits(saved[lastOpened],cur))return lastOpened;
+  let i=saved.findIndex(x=>SIGN_KEYS.every(k=>(k in x)&&x[k]===cur[k]));
+  if(i<0)i=saved.findIndex(x=>SIGN_KEYS.every(k=>!(k in x)||x[k]===cur[k]));
+  if(i<0)i=saved.findIndex(x=>x.message===state.message);
+  return i;
+}
+// รายการเก่า (มีแต่ข้อความ) เปลี่ยนแค่ข้อความ ค่าอื่นคงตามที่ตั้งอยู่ / รายการใหม่คืนค่าทั้งชุด
+function openSaved(i){const sg=saved[i];if(!sg)return;const o={};SIGN_KEYS.forEach(k=>{if(k in sg)o[k]=sg[k]});
+  // ป้ายเต็มชุด: ป้ายกำกับธีมตามป้าย (ไม่มี = ไม่ใช่ธีมไหน) / รายการข้อความล้วน: หน้าตาไม่เปลี่ยน ป้ายกำกับคงเดิม
+  if('color' in sg)o.theme=('theme' in sg)?sg.theme:'';
+  state={...state,...o};changed(true);lastOpened=i} // ส่วนส่งผ่าน (_x) ไม่เข้า state
 function renderSaved(){
+  $('jumpCount').textContent=saved.length; // V0.5.0: ตัวเลขบนปุ่มทางลัด 📋
+  lastOpened=-1; // รายการเปลี่ยน (บันทึก/ลบ) ตำแหน่งเดิมใช้ไม่ได้แล้ว
   const root=$('saved');root.replaceChildren();
   if(!saved.length){const s=document.createElement('span');s.className='empty';s.textContent=t('none');root.appendChild(s);return}
-  saved.forEach((txt,i)=>{
+  saved.forEach((sg,i)=>{
     const wrapEl=document.createElement('div');wrapEl.className='item';
-    const b=document.createElement('button');b.className='pill';b.textContent=txt.replace(/\n/g,' / ').slice(0,40);
-    b.onclick=()=>{state.message=txt;changed(true)};
-    const d=document.createElement('button');d.className='pill del';d.textContent='×';d.setAttribute('aria-label','× '+txt);
+    const b=document.createElement('button');b.className='pill';
+    if(sg.color||sg.bg){const c=document.createElement('span');c.className='cdot'; // ไส้ = สีตัวอักษร, ขอบ = สีพื้นหลัง
+      const col=sg.color||'#888888';c.style.background=col==='rainbow'?'linear-gradient(90deg,#f44,#fd3,#3f7,#4cf,#a6f)':col;
+      c.style.borderColor=sg.bg||'#000000';b.appendChild(c)}
+    b.appendChild(document.createTextNode(sg.message.replace(/\n/g,' / ').slice(0,40)));
+    b.onclick=()=>openSaved(i);
+    const d=document.createElement('button');d.className='pill del';d.textContent='×';d.setAttribute('aria-label','× '+sg.message);
     d.onclick=()=>{saved.splice(i,1);persistSaved();renderSaved()};
     wrapEl.append(b,d);root.appendChild(wrapEl);
   });
 }
-$('save').onclick=()=>{const s=state.message.trim();if(!s)return alert(t('empty'));if(!saved.includes(s))saved.unshift(s);saved=saved.slice(0,30);persistSaved();renderSaved()};
+/* กดบันทึก (V0.4.0 ข้อ 4.5 ข):
+   1) หารายการที่ช่องที่รู้จักตรงกันทุกช่อง (sameSign — ไม่ดู theme ไม่ดู _x)
+   2) ไม่เจอ → ป้ายใหม่ขึ้นบนสุด
+   3) เจอ → ป้ายเดียวกัน: เป้าหมาย = lastOpened ถ้าอยู่ในกลุ่ม ไม่งั้นอันแรก → ขึ้นบนสุดพร้อม _x ของมันเอง
+   4) อื่น ๆ ในกลุ่ม: _x เหมือนเป้าหมาย = ซ้ำจริง ลบ / _x ต่าง = ป้ายต่างกันในเวอร์ชันอนาคต เก็บไว้ที่เดิม
+   ป้ายทั่วไป (ไม่มี _x) ได้ผลเท่ากับ V0.3.10: ลบตัวซ้ำทั้งหมดแล้วขึ้นบนสุด */
+$('save').onclick=()=>{if(!state.message.trim())return alert(t('empty'));
+  const sg=cleanSign({...signOf(state),theme:state.theme});if(!sg)return;
+  const hits=[];saved.forEach((x,i)=>{if(sameSign(x,sg))hits.push(i)});
+  let item=sg;
+  if(hits.length){const ti=hits.includes(lastOpened)?lastOpened:hits[0],tgt=saved[ti],tk=extraKey(tgt);
+    item={...tgt};if('theme' in sg)item.theme=sg.theme;else delete item.theme;
+    saved=saved.filter((x,i)=>!(hits.includes(i)&&extraKey(x)===tk));}
+  saved.unshift(item);saved=saved.slice(0,30);persistSaved();renderSaved()};
 $('reset').onclick=()=>{const lang=state.lang;state={...DEF,lang};changed(true)};
+
+/* ---------- แท็บ (V0.5.0) ----------
+   สลับแท็บ = ซ่อน/แสดงกล่องแท็บเท่านั้น ไม่แตะ state ไม่เรียก changed() ไม่เก็บลงเครื่อง
+   แท็บเริ่มต้น = ธีม ทุกครั้งที่เปิดแอป */
+const tabs=[...document.querySelectorAll('#tabbar [role="tab"]')];
+function showTab(name,focus){
+  tabs.forEach(b=>{const on=b.dataset.tab===name;b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1;
+    $(b.getAttribute('aria-controls')).hidden=!on;if(on&&focus)b.focus()});
+  document.querySelectorAll('.palette.open').forEach(p=>p.classList.remove('open')); // จานสีที่กางค้างปิดเอง
+}
+tabs.forEach((b,i)=>{
+  b.addEventListener('click',()=>showTab(b.dataset.tab));
+  b.addEventListener('keydown',e=>{ // คีย์บอร์ดตามรูปแบบแท็บมาตรฐาน
+    let j=null;if(e.key==='ArrowRight')j=(i+1)%tabs.length;else if(e.key==='ArrowLeft')j=(i-1+tabs.length)%tabs.length;
+    else if(e.key==='Home')j=0;else if(e.key==='End')j=tabs.length-1;
+    if(j!==null){e.preventDefault();showTab(tabs[j].dataset.tab,true)}});
+});
+showTab('themes');
+$('jump').onclick=()=>$('savedHead').scrollIntoView({behavior:'smooth',block:'start'});
 
 applyLang();refresh();requestAnimationFrame(tick);
 })();
 </script>
 <script>
+/* ===== V0.6.0: ระบบติดตั้งแอป (แยกจากโค้ดแอปทั้งหมด ไม่แตะ engine / state / ระบบบันทึก) =====
+   - ลงทะเบียน sw.js แบบชื่อสัมพัทธ์ (วางที่ไหน ขอบเขตอยู่ที่โฟลเดอร์นั้น)
+   - ปุ่มติดตั้ง: ซ่อนเป็นค่าเริ่มต้น โผล่เฉพาะเมื่อ Chrome ส่ง beforeinstallprompt และไม่ได้เปิดอยู่ในแอป
+   - โหมดทดสอบ: แสดงเวอร์ชันของหน้า / SW คุมไหม / ชื่อแคชในเครื่อง */
+(()=>{'use strict';
+const VER=(document.querySelector('meta[name="app-version"]')||{}).content||'?';
+const bar=document.getElementById('installBar'),btn=document.getElementById('installBtn');
+const isApp=()=>['standalone','fullscreen','minimal-ui','window-controls-overlay'].some(m=>{try{return matchMedia('(display-mode: '+m+')').matches}catch(e){return false}})||navigator.standalone===true;
+let ev=null;
+const hide=()=>{ev=null;bar.hidden=true};
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();if(isApp()||document.fullscreenElement)return;ev=e;bar.hidden=false});
+window.addEventListener('appinstalled',hide);
+btn.addEventListener('click',async()=>{const e=ev;hide();if(!e)return;try{await e.prompt();await e.userChoice}catch(err){}});
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+const info=document.getElementById('pwaInfo'),box=info&&info.closest('details');
+async function diag(){
+  let c='-';try{c=(await caches.keys()).join(', ')||'(none)'}catch(e){}
+  const sw=('serviceWorker' in navigator)&&navigator.serviceWorker.controller?navigator.serviceWorker.controller.scriptURL.replace(location.origin,''):'off';
+  info.textContent='page V'+VER+' · SW: '+sw+' · cache: '+c;
+}
+if(box){box.addEventListener('toggle',()=>{if(box.open)diag()})}
+})();
 </script>
 </body>
 </html>
