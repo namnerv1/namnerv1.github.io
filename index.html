@@ -4,12 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<meta name="app-version" content="0.6.0">
+<meta name="app-version" content="0.6.1">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
-<title>My LED Sign V0.6.0</title>
+<title>My LED Sign V0.6.1</title>
+<script>
+/* V0.6.1 โหมดหน้าจอ (Dark Mode Design Draft 2 ส่วนที่ 3–4)
+   อ่าน led3-ui = {"v":1,"mode":"dark"|"light"} อย่างเดียว ไม่เขียน — ผิดพลาดทุกกรณี = มืด
+   ตั้ง <html data-theme> ก่อน CSS วาดหน้าแรก (ชุดสีมืด/สว่างมีอยู่แล้วใน CSS ของ V0.6.0) */
+(function(){var m='dark';
+try{var o=JSON.parse(localStorage.getItem('led3-ui'));if(o&&o.v===1&&(o.mode==='dark'||o.mode==='light'))m=o.mode}catch(e){}
+try{document.documentElement.setAttribute('data-theme',m);var t=document.querySelector('meta[name="theme-color"]');if(t)t.setAttribute('content',m==='light'?'#eef1f7':'#0b1020')}catch(e){}
+})();
+</script>
 <style>
 /* V0.5.0: ของที่ใส่ hidden ต้องซ่อนจริง แม้ CSS เดิมกำหนด display ไว้ */
 [hidden]{display:none!important}
@@ -28,12 +37,17 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Noto
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 .wrap{max-width:680px;margin:auto;padding:0 16px}
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:18px;padding-bottom:10px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:18px;padding-bottom:10px;flex-wrap:wrap}
 h1{font-size:23px;margin:0}
 .ver{font-size:13px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;vertical-align:middle;white-space:nowrap}
 .cdot{display:inline-block;box-sizing:content-box;width:8px;height:8px;border:3px solid #000;border-radius:50%;margin-right:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(255,255,255,.35)}
 .tag{color:var(--muted);font-size:13px}
 .langsel{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:7px 8px;max-width:46%}
+/* V0.6.1 ปุ่มโหมดหน้าจอ ข้างซ้ายช่องภาษา — สองอย่างนี้อยู่แถวเดียวกันเสมอ ถ้าที่ไม่พอ (ตัวอักษรใหญ่) ทั้งแถวขึ้นบรรทัดใหม่ชิดขวา */
+header>div:first-child{flex:1 1 0;min-width:7em}
+.hdtools{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+.hdtools .langsel{max-width:min(8em,30vw);min-width:0}
+.uimode{flex:none;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border-radius:50%;background:var(--field);color:var(--text);border:1px solid var(--line);font-size:20px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 .preview{position:relative;background:#000;border:2px solid var(--frame);border-radius:16px;overflow:hidden;aspect-ratio:16/8;touch-action:manipulation}
 .preview canvas{width:100%;height:100%;display:block;background:#000}
 .preview .tap{position:absolute;right:9px;bottom:9px;background:#20283cc9;border:1px solid #536079;color:#fff;border-radius:10px;padding:7px 10px;font-size:12px}
@@ -121,8 +135,8 @@ body.show{overflow:hidden}
 </head>
 <body>
 <header class="wrap">
-  <div><h1>✨ My LED Sign <span class="ver">V0.6.0</span></h1><div class="tag" data-i="tag"></div></div>
-  <select class="langsel" id="lang" aria-label="Language"></select>
+  <div><h1>✨ My LED Sign <span class="ver">V0.6.1</span></h1><div class="tag" data-i="tag"></div></div>
+  <div class="hdtools"><button class="uimode" id="uiMode" type="button">🌙</button><select class="langsel" id="lang" aria-label="Language"></select></div>
 </header>
 <div class="wrap installbar" id="installBar" hidden><button class="pill small" id="installBtn" type="button" data-i="install"></button></div>
 
@@ -263,6 +277,18 @@ const T13={"en": {"install": "📲 Install app"}, "th": {"install": "📲 ติ
 Object.keys(T13).forEach(k=>{if(T[k])Object.assign(T[k],T13[k])});
 const T5={"en": {"paging": "Split into pages when text gets too small (Still mode)", "pages": "Still: all your text stays on one screen."}, "th": {"paging": "แบ่งหน้าอัตโนมัติ เมื่อข้อความยาวจนตัวอักษรเล็กเกินไป (โหมดหยุดนิ่ง)", "pages": "หยุดนิ่ง: ข้อความทั้งหมดจะอยู่ในจอเดียว"}, "es": {"paging": "Dividir en páginas si el texto queda demasiado pequeño (modo Fijo)", "pages": "Fijo: todo el texto se queda en una sola pantalla."}, "pt": {"paging": "Dividir em páginas quando o texto ficar pequeno demais (modo Parado)", "pages": "Parado: todo o texto fica em uma única tela."}, "fr": {"paging": "Découper en pages si le texte devient trop petit (mode Fixe)", "pages": "Fixe : tout le texte reste sur un seul écran."}, "id": {"paging": "Bagi jadi beberapa halaman jika teks terlalu kecil (mode Diam)", "pages": "Diam: semua teks tetap dalam satu layar."}, "vi": {"paging": "Chia trang khi chữ quá nhỏ (chế độ Đứng yên)", "pages": "Đứng yên: toàn bộ chữ nằm trong một màn hình."}, "ja": {"paging": "文字が小さくなりすぎるときはページに分ける（固定モード）", "pages": "固定：文章はすべて1画面に表示します。"}, "ko": {"paging": "글자가 너무 작아지면 페이지로 나누기 (고정 모드)", "pages": "고정: 모든 문구를 한 화면에 표시합니다."}, "zh": {"paging": "文字太小时自动分页（静止模式）", "pages": "静止：所有文字都显示在同一屏幕上。"}};
 Object.keys(T5).forEach(k=>Object.assign(T[k],T5[k]));
+/* T14 (V0.6.1): ปุ่มโหมดหน้าจอ — บอกสิ่งที่จะเกิดเมื่อกด */
+const T14={en:{toLight:'Switch to light mode',toDark:'Switch to dark mode'},
+th:{toLight:'เปลี่ยนเป็นโหมดสว่าง',toDark:'เปลี่ยนเป็นโหมดมืด'},
+es:{toLight:'Cambiar a modo claro',toDark:'Cambiar a modo oscuro'},
+pt:{toLight:'Mudar para o modo claro',toDark:'Mudar para o modo escuro'},
+fr:{toLight:'Passer en mode clair',toDark:'Passer en mode sombre'},
+id:{toLight:'Beralih ke mode terang',toDark:'Beralih ke mode gelap'},
+vi:{toLight:'Chuyển sang chế độ sáng',toDark:'Chuyển sang chế độ tối'},
+ja:{toLight:'ライトモードに切り替え',toDark:'ダークモードに切り替え'},
+ko:{toLight:'라이트 모드로 전환',toDark:'다크 모드로 전환'},
+zh:{toLight:'切换到浅色模式',toDark:'切换到深色模式'}};
+Object.keys(T14).forEach(k=>{if(T[k])Object.assign(T[k],T14[k])});
 const TESTS=['ผู้ใหญ่ที่น่ารัก','กู้ภัยฉุกเฉิน','น้ำแข็งใส','ซื้อหนึ่งแถมหนึ่ง','รักนะ ❤️ LOVE YOU 😍','สู้ ๆ 💪🔥🎉','วิธีทดลองให้ได้เต็มจอจริง: อย่าเปิดในแอป Claude ให้กด ⋮ มุมขวาบน แล้วเลือกเปิดในเบราว์เซอร์','ສະບາຍດີ','សួស្តី','မင်္ဂလာပါ','Xin chào Việt Nam','こんにちは','안녕하세요','你好世界','مرحبا','¡Hola! Ça va? Olá!','❤️ 👻 💀 🤍 🥰 👍🏻 👨‍👩‍👧‍👦','今日はご来店いただき、誠にありがとうございます。またのお越しをお待ちしております。','مرحبا بكم في My LED Sign 2026','أهلا وسهلا بكم في متجرنا. نتمنى لكم يوما سعيدا ونراكم قريبا'];
 const EMOJIS=['❤️','😍','🥰','😂','🥳','👏','🔥','💪','✨','👍','🙏','🎉','💖','⭐','😭','👋'];
 function detectLang(){const n=(navigator.language||'en').toLowerCase().slice(0,2);return T[n]?n:'en'}
@@ -508,7 +534,25 @@ function applyLang(){
   $('swap').title=t('swap');$('swap').setAttribute('aria-label',t('swap'));
   $('jump').title=t('saved');$('jump').setAttribute('aria-label',t('saved'));
   langSel.value=state.lang;renderSaved();refreshLabels();
+  uiPaint();
 }
+
+/* ---------- V0.6.1 โหมดหน้าจอ (Dark Mode Design Draft 2 ส่วนที่ 5) ----------
+   ค่าของแอป ไม่ใช่ของป้าย: อยู่ใน led3-ui แยกต่างหาก / เขียนเฉพาะตอนกดปุ่ม */
+function uiMode(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark'}
+function uiPaint(){
+  const b=$('uiMode'),m=uiMode(),l=t(m==='light'?'toDark':'toLight');
+  b.textContent=m==='light'?'☀️':'🌙';b.title=l;b.setAttribute('aria-label',l);
+  const pi=$('pwaInfo');if(pi&&pi.textContent.indexOf(' · ui: ')>=0)pi.textContent=pi.textContent.replace(/ · ui: \w+/,' · ui: '+m);
+}
+if(!document.documentElement.getAttribute('data-theme'))document.documentElement.setAttribute('data-theme','dark');
+$('uiMode').onclick=()=>{
+  const m=uiMode()==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',m);
+  const tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.setAttribute('content',m==='light'?'#eef1f7':'#0b1020');
+  try{localStorage.setItem('led3-ui',JSON.stringify({v:1,mode:m}))}catch(e){}
+  uiPaint();
+};
 function refreshLabels(){
   $('speedVal').textContent=state.speed+'%';
   const still=state.mode==='still';
@@ -988,7 +1032,7 @@ const info=document.getElementById('pwaInfo'),box=info&&info.closest('details');
 async function diag(){
   let c='-';try{c=(await caches.keys()).join(', ')||'(none)'}catch(e){}
   const sw=('serviceWorker' in navigator)&&navigator.serviceWorker.controller?navigator.serviceWorker.controller.scriptURL.replace(location.origin,''):'off';
-  info.textContent='page V'+VER+' · SW: '+sw+' · cache: '+c;
+  info.textContent='page V'+VER+' · SW: '+sw+' · cache: '+c+' · ui: '+(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
 }
 if(box){box.addEventListener('toggle',()=>{if(box.open)diag()})}
 })();
